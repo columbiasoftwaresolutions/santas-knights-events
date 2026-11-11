@@ -1,5 +1,7 @@
+import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
+import { Listing } from "./schema";
 import { decodeListing, listingInput } from "./test-support";
 
 const free = listingInput();
@@ -44,7 +46,9 @@ describe("what would crash or mislead the page is rejected at the boundary", () 
   });
 
   it("rejects an impossible day or clock time", () => {
-    expect(() => decodeListing({ ...free, day: "2026-13-01" })).toThrow();
+    expect(Schema.decodeUnknownResult(Listing)({ ...free, day: "2026-13-01" })._tag).toBe(
+      "Failure",
+    );
     expect(() => decodeListing({ ...free, startTime: "25:00" })).toThrow();
   });
 

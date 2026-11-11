@@ -10,6 +10,13 @@ describe("parseFilters treats the URL as untrusted", () => {
     expect([bad.borough, bad.cost, bad.day]).toEqual([undefined, undefined, undefined]);
   });
 
+  it.each(["2026-13-01", "2026-02-31", "2025-02-29"])(
+    "ignores impossible calendar date %s",
+    (day) => {
+      expect(parseFilters({ day }).day).toBeUndefined();
+    },
+  );
+
   it("cannot be talked into the internal 'any' cost", () => {
     expect(parseFilters({ cost: "any" }).cost).toBeUndefined();
   });
@@ -23,7 +30,10 @@ describe("toggleHref", () => {
   it("sets a filter, clears it when clicked again, and keeps the others", () => {
     expect(toggleHref({}, "borough", "Bronx")).toContain("borough=Bronx");
     expect(toggleHref({ borough: "Bronx" }, "borough", "Bronx")).toBe("/");
-    expect(toggleHref({ cost: "free" }, "borough", "Bronx")).toMatch(/cost=free.*borough=Bronx/);
+    const params = new URL(toggleHref({ cost: "free" }, "borough", "Bronx"), "https://example.org")
+      .searchParams;
+    expect(params.get("cost")).toBe("free");
+    expect(params.get("borough")).toBe("Bronx");
   });
 
   it("clears a filter when given an empty value (how the default scope is selected)", () => {

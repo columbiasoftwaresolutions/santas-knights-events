@@ -1,4 +1,11 @@
-import { BOROUGHS, COST_STATUSES, type Borough, type CostStatus, type Filters } from "./schema";
+import {
+  BOROUGHS,
+  COST_STATUSES,
+  isIsoDate,
+  type Borough,
+  type CostStatus,
+  type Filters,
+} from "./schema";
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -14,7 +21,7 @@ export function parseFilters(params: Params): Filters {
     borough: BOROUGHS.includes(borough as Borough) ? (borough as Borough) : undefined,
     discipline: first(params.discipline),
     cost: COST_STATUSES.includes(cost as CostStatus) ? (cost as CostStatus) : undefined,
-    day: day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : undefined,
+    day: day && isIsoDate(day) ? day : undefined,
   };
 }
 

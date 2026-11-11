@@ -32,13 +32,14 @@ const NonBlank = Schema.String.check(
   Schema.makeFilter((s: string) => s.trim() !== "" || "Must not be blank"),
 );
 
-// YYYY-MM-DD that is a real calendar date (rejects 2026-02-31).
+// Validate without throwing, including invalid months and leap days.
+export function isIsoDate(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const date = new Date(`${s}T12:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().startsWith(s);
+}
 export const IsoDate = Schema.String.check(
-  Schema.makeFilter(
-    (s: string) =>
-      (/^\d{4}-\d{2}-\d{2}$/.test(s) && new Date(`${s}T12:00:00Z`).toISOString().startsWith(s)) ||
-      "Expected a real date as YYYY-MM-DD",
-  ),
+  Schema.makeFilter((s: string) => isIsoDate(s) || "Expected a real date as YYYY-MM-DD"),
 );
 
 // HH:mm on a 24-hour clock.
@@ -76,6 +77,8 @@ const ListingFields = Schema.Struct({
   borough: Schema.NullOr(Borough),
   neighborhood: Schema.NullOr(Schema.String),
   venue: Schema.NullOr(Schema.String),
+  address: Schema.optionalKey(Schema.NullOr(Schema.String)),
+  scheduleText: Schema.optionalKey(Schema.NullOr(Schema.String)),
   latitude: Schema.NullOr(Schema.Number),
   longitude: Schema.NullOr(Schema.Number),
   day: Schema.NullOr(IsoDate), // New York local date
