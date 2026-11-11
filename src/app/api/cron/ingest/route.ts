@@ -34,19 +34,13 @@ export async function GET(request: Request): Promise<Response> {
     runSource(make()).pipe(Effect.provide(Supabase.admin), Effect.result),
   );
   if (outcome._tag === "Failure") {
-    // Short, sanitized: never echo keys or raw upstream payloads.
-    const message =
-      "message" in outcome.failure ? String(outcome.failure.message).slice(0, 300) : "failed";
-    // oxlint-disable-next-line no-console -- visible in Vercel logs; message is already sanitized
-    console.error("ingest failed", slug, message);
-    // oxlint-disable-next-line no-console -- visible in Vercel logs; the message is already short
-    console.error("ingest failed", slug);
-    const operation =
-      "operation" in outcome.failure ? String(outcome.failure.operation) : undefined;
+    // Never return raw database/upstream messages or credentials.
     return Response.json(
-      { source: slug, status: "failed", operation, error: message },
+      { source: slug, status: "failed", error: "ingestion_failed" },
       { status: 500 },
     );
   }
-  return Response.json(outcome.success);
+  return Response.json(outcome.success, {
+    status: outcome.success.status === "succeeded" ? 200 : 503,
+  });
 }

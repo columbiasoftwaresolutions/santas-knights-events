@@ -327,20 +327,27 @@ export const parksRecCenters = {
     const result: SourceResult = { fetched: 0, rejected: 0, candidates: [], fetchedAt };
     const candidates: Candidate[] = [];
     result.candidates = candidates;
+    const deadline = Date.now() + 240_000;
     let requested = false;
     let stopped = false;
     async function get(url: string): Promise<string | null> {
       if (stopped) return null;
       if (requested) await new Promise((resolve) => setTimeout(resolve, 3000));
+      if (Date.now() >= deadline) {
+        stopped = true;
+        result.incomplete = true;
+        return null;
+      }
       requested = true;
       try {
         const response = await fetchImpl(url, {
           headers: { "User-Agent": PARKS_USER_AGENT, Accept: "text/html,application/xhtml+xml" },
-          signal: AbortSignal.timeout(20_000),
+          signal: AbortSignal.timeout(Math.min(20_000, deadline - Date.now())),
           cache: "no-store",
           redirect: "manual",
         });
         if (!response.ok) {
+          result.incomplete = true;
           if (response.status === 403 || response.status === 429) stopped = true;
           return null;
         }
@@ -348,6 +355,7 @@ export const parksRecCenters = {
       } catch {
         // Timeout/network failure: preserve anything already collected; no retry.
         stopped = true;
+        result.incomplete = true;
         return null;
       }
     }

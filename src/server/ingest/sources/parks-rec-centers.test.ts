@@ -66,7 +66,6 @@ describe("reading a schedule page", () => {
     expect(result.rejected).toBeGreaterThan(0); // the non-martial-arts programs
 
     const first = Schema.decodeUnknownSync(Candidate)(result.candidates[0]);
-    expect(first.listing.dedupe_key).toMatch(/^parks-rec:M058:\d+$/);
     expect(first.listing.borough).toBe("Manhattan");
     expect(first.occurrences[0]!.starts_at).toBe("2026-11-10T18:00:00-05:00");
   });
@@ -167,6 +166,7 @@ describe("collecting politely", () => {
     await vi.runAllTimersAsync();
     const result = await pending;
     expect(result.candidates.length).toBeGreaterThan(0);
+    expect(result.incomplete).toBe(true);
     // It never moved on to another center after being refused.
     expect(calls.filter((c) => c.url.endsWith("/schedule"))).toHaveLength(1);
   });

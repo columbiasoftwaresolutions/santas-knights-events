@@ -3,6 +3,8 @@ import { normalizeSourceUrl } from "@/lib/listings/url";
 
 import { listingPayload, occurrence } from "../build";
 import { fetchText, type FetchImpl } from "../http";
+import { htmlToText } from "../quote";
+import { stringRow } from "../rows";
 import { classifyDiscipline } from "../taxonomy";
 import type { Source, SourceDef, SourceResult } from "../types";
 
@@ -43,20 +45,25 @@ const BOROUGH_BY_PARK_PREFIX = {
 
 const urlOf = (v: ParksRow["link"]) => (typeof v === "string" ? v : v?.url) ?? null;
 
-// A sentence of the description that says the event is free. Parks writes "Free!" or
-// "This class is free" in some descriptions. Null means no explicit cost sentence.
+// Require an affirmative participation claim. Ambiguous fees, trials, negation,
+// and incidental freebies cannot establish that the ongoing class is free.
 export function freeSentence(description: string): string | null {
+  if (
+    /\$|\b(?:costs?|fees?|paid|trial|first|not|never|except|only|donation|members?)\b/i.test(
+      description,
+    )
+  )
+    return null;
   const sentences = description.replace(/\s+/g, " ").match(/[^.!?]+[.!?]?/g) ?? [];
-  for (const raw of sentences) {
-    const s = raw.trim();
-    if (
-      /\b(free|no cost|no charge|no fee)\b/i.test(s) &&
-      !/\b(not free|fee required|\$\d)/i.test(s)
-    ) {
-      return s;
-    }
-  }
-  return null;
+  return (
+    sentences
+      .map((s) => s.trim())
+      .find((s) =>
+        /^(?:free[.!]?|free to (?:join|attend|participate)[.!]?|(?:this |the |all )?(?:class(?:es)?|event(?:s)?|session(?:s)?|admission|participation) (?:is|are) (?:completely |100% )?(?:free|at no cost|at no charge)[.!]?)$/i.test(
+          s,
+        ),
+      ) ?? null
+  );
 }
 
 function localParts(floating: string | undefined) {
@@ -78,7 +85,7 @@ export function parksEventToCandidate(row: ParksRow, fetchedAt: string): unknown
   const end = localParts(row.endtime);
   const endsAt = end ? nyInstant(end.day, end.time) : null;
   const registrationUrl = normalizeSourceUrl(urlOf(row.registration_url) ?? "");
-  const description = (row.description ?? "").trim();
+  const description = htmlToText(row.description ?? "").trim();
   const quote = freeSentence(description);
   const [lat, lng] = (row.coordinates ?? "").split(",").map((n) => Number(n.trim()));
   const hasPoint = Number.isFinite(lat) && Number.isFinite(lng);
@@ -104,7 +111,7 @@ export function parksEventToCandidate(row: ParksRow, fetchedAt: string): unknown
       registration_notes: row.registration_description?.trim() || null,
       cost_status: cost,
     }),
-    occurrences: [occurrence(startsAt, endsAt, `${guid}:${row.starttime}`)],
+    occurrences: [occurrence(startsAt, endsAt, guid)],
     evidence: quote
       ? [
           {
@@ -122,9 +129,32 @@ export function parksEventToCandidate(row: ParksRow, fetchedAt: string): unknown
 export function parseParksEvents(json: string, fetchedAt: string): SourceResult {
   const parsed: unknown = JSON.parse(json);
   if (!Array.isArray(parsed)) throw new Error("Unexpected response from NYC Open Data");
-  const rows = parsed as ParksRow[];
+  const rows = parsed as unknown[];
   const candidates = rows.flatMap((row) => {
-    const c = parksEventToCandidate(row, fetchedAt);
+    const fields = stringRow(row, [
+      "title",
+      "guid",
+      "description",
+      "registration_description",
+      "parkids",
+      "parknames",
+      "location",
+      "starttime",
+      "endtime",
+      "coordinates",
+    ]);
+    if (!fields || typeof row !== "object" || row === null) return [];
+    const raw = row as Record<string, unknown>;
+    const link = (v: unknown): string | { url: string } | undefined => {
+      if (typeof v === "string") return v;
+      if (typeof v === "object" && v !== null && "url" in v && typeof v.url === "string")
+        return { url: v.url };
+      return undefined;
+    };
+    const c = parksEventToCandidate(
+      { ...fields, link: link(raw.link), registration_url: link(raw.registration_url) },
+      fetchedAt,
+    );
     return c ? [c] : [];
   });
   return { fetched: rows.length, rejected: rows.length - candidates.length, candidates, fetchedAt };

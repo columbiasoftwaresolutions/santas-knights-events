@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { Candidate } from "../types";
 import { curated, CURATED } from "./curated";
-import { parseOac, OAC_POLICY_QUOTE } from "./nyc-aging-oac";
+import { parseOac } from "./nyc-aging-oac";
 import { freeSentence, parseParksEvents } from "./parks-events";
 
 const decode = Schema.decodeUnknownSync(Candidate);
@@ -77,6 +77,35 @@ describe("parks events", () => {
     expect(c.occurrences[0]!.starts_at).toBe("2026-07-01T18:00:00-04:00");
   });
 
+  it.each([
+    "Free parking. Class costs $20.",
+    "Try a free first class.",
+    "This class is not always free.",
+    "Feel free to bring water.",
+    "This class is free. A $20 fee applies.",
+  ])("does not publish an ambiguous or paid offering as free: %s", (description) => {
+    const c = decode(
+      parseParksEvents(JSON.stringify([{ ...rows[0], description }]), FETCHED).candidates[0],
+    );
+    expect(c.listing.cost_status).toBe("unverified");
+    expect(c.evidence).toEqual([]);
+  });
+
+  it("keeps an occurrence identity when its time changes", () => {
+    const before = decode(parseParksEvents(JSON.stringify([rows[0]]), FETCHED).candidates[0]);
+    const after = decode(
+      parseParksEvents(
+        JSON.stringify([
+          { ...rows[0], starttime: "2026-11-18T11:00:00.000", endtime: "2026-11-18T12:00:00.000" },
+        ]),
+        FETCHED,
+      ).candidates[0],
+    );
+    expect(after.occurrences[0]?.source_occurrence_key).toBe(
+      before.occurrences[0]?.source_occurrence_key,
+    );
+  });
+
   it("finds only an explicit free sentence", () => {
     expect(freeSentence("Fitness for all. Free to join. Meet at the lawn.")).toBe("Free to join.");
     expect(freeSentence("Registration required. $20 fee.")).toBeNull();
@@ -126,7 +155,7 @@ describe("NYC Aging older adult centers", () => {
   ];
 
   it("groups sessions into one listing and skips past, virtual and unrelated rows", () => {
-    const r = parseOac(JSON.stringify(rows), FETCHED, true, "2026-11-11");
+    const r = parseOac(JSON.stringify(rows), FETCHED, "2026-11-11");
     expect(r.fetched).toBe(5);
     expect(r.candidates).toHaveLength(1);
     expect(r.rejected).toBe(3);
@@ -136,13 +165,10 @@ describe("NYC Aging older adult centers", () => {
     expect(c.listing.address).toBe("175 Delancey street 4th floor, 10002");
   });
 
-  it("is free with registration only while the policy quote is verified", () => {
-    const ok = decode(parseOac(JSON.stringify(rows), FETCHED, true, "2026-11-11").candidates[0]);
-    expect(ok.listing.cost_status).toBe("free_with_registration");
-    expect(ok.evidence[0]!.quote).toBe(OAC_POLICY_QUOTE);
-    const gone = decode(parseOac(JSON.stringify(rows), FETCHED, false, "2026-11-11").candidates[0]);
-    expect(gone.listing.cost_status).toBe("unverified");
-    expect(gone.evidence).toEqual([]);
+  it("does not infer free activities from a free membership policy", () => {
+    const c = decode(parseOac(JSON.stringify(rows), FETCHED, "2026-11-11").candidates[0]);
+    expect(c.listing.cost_status).toBe("unverified");
+    expect(c.evidence).toEqual([]);
   });
 });
 
@@ -152,20 +178,29 @@ describe("an outage answer is a failure, not an empty source", () => {
     errorCode: "service-unavailable",
   });
   it("throws for both Open Data adapters", () => {
-    expect(() => parseOac(outage, FETCHED, true, "2026-11-11")).toThrow(/Unexpected response/);
-    expect(() => parseParksEvents(outage, FETCHED)).toThrow(/Unexpected response/);
+    expect(() => parseOac(outage, FETCHED, "2026-11-11")).toThrow();
+    expect(() => parseParksEvents(outage, FETCHED)).toThrow();
   });
 });
 
 describe("curated listings", () => {
+  const entry: (typeof CURATED)[number] = {
+    listing: {
+      dedupe_key: "test:class",
+      title: "Test class",
+      source_url: "https://example.org/class",
+      cost_status: "free_with_registration",
+    },
+    evidence: {
+      quote: "Participation is free with registration.",
+      url: "https://example.org/policy",
+    },
+  };
   const page = (text: string) => async () =>
     new Response(`<html><body><p>${text}</p></body></html>`);
 
   it("keeps the free status when the quote is on the page", async () => {
-    const source = curated(
-      page("Hello. All classes are 100% FREE, 100% of the time, no-questions-asked! Bye."),
-      CURATED.slice(0, 1),
-    );
+    const source = curated(page("Hello. Participation is free with registration. Bye."), [entry]);
     const result = await source.collect();
     const c = decode(result.candidates[0]);
     expect(c.listing.cost_status).toBe("free_with_registration");
@@ -173,14 +208,14 @@ describe("curated listings", () => {
   });
 
   it("drops to unverified, keeping the listing, when the quote is gone", async () => {
-    const source = curated(page("Classes cost $30 a week."), CURATED.slice(0, 1));
+    const source = curated(page("Classes cost $30 a week."), [entry]);
     const c = decode((await source.collect()).candidates[0]);
     expect(c.listing.cost_status).toBe("unverified");
     expect(c.evidence).toEqual([]);
   });
 
   it("drops to unverified when the page cannot be read", async () => {
-    const source = curated(async () => new Response("no", { status: 403 }), CURATED.slice(0, 1));
+    const source = curated(async () => new Response("no", { status: 403 }), [entry]);
     expect(decode((await source.collect()).candidates[0]).listing.cost_status).toBe("unverified");
   });
 
@@ -190,4 +225,12 @@ describe("curated listings", () => {
     expect(candidates).toHaveLength(CURATED.length);
     for (const c of candidates) expect(() => decode(c)).not.toThrow();
   });
+});
+
+it("rejects malformed individual feed rows without losing valid neighbors", () => {
+  const malformed = [null, { title: 42 }, { eventname: 42 }];
+  expect(parseParksEvents(JSON.stringify(malformed), FETCHED).rejected).toBe(malformed.length);
+  expect(parseOac(JSON.stringify(malformed), FETCHED, "2026-11-11").rejected).toBe(
+    malformed.length,
+  );
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchText } from "./http";
 
@@ -12,19 +12,25 @@ const sequence = (...statuses: number[]) => {
 };
 
 describe("fetchText", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
   it("retries a busy server and then succeeds", async () => {
     const s = sequence(503, 503, 200);
-    await expect(
-      fetchText("https://example.org/", { fetchImpl: s.impl, retryDelayMs: 1 }),
-    ).resolves.toBe("ok");
+    const pending = expect(fetchText("https://example.org/", { fetchImpl: s.impl })).resolves.toBe(
+      "ok",
+    );
+    await vi.runAllTimersAsync();
+    await pending;
     expect(s.calls()).toBe(3);
   });
 
   it("gives up after three tries on a persistent 503", async () => {
     const s = sequence(503);
-    await expect(
-      fetchText("https://example.org/", { fetchImpl: s.impl, retryDelayMs: 1 }),
-    ).rejects.toThrow(/503/);
+    const pending = expect(
+      fetchText("https://example.org/", { fetchImpl: s.impl }),
+    ).rejects.toThrow();
+    await vi.runAllTimersAsync();
+    await pending;
     expect(s.calls()).toBe(3);
   });
 

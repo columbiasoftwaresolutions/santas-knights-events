@@ -19,7 +19,6 @@ export interface RunSummary {
 }
 
 const STALE_RUN_MINUTES = 10;
-const short = (message: string) => message.replace(/\s+/g, " ").slice(0, 300);
 
 export const runSource = (source: Source) =>
   Effect.gen(function* () {
@@ -105,11 +104,11 @@ export const runSource = (source: Source) =>
 
     const collected = yield* Effect.tryPromise({
       try: () => source.collect(),
-      catch: (cause) =>
+      catch: () =>
         new SourceError({
           source: def.slug,
           stage: "fetch",
-          message: short(cause instanceof Error ? cause.message : String(cause)),
+          message: "source_collection_failed",
         }),
     }).pipe(Effect.result);
 
@@ -128,14 +127,14 @@ export const runSource = (source: Source) =>
     const { fetched, candidates, rejected: skipped } = collected.success;
 
     let rejected = skipped;
-    let firstError: string | null = null;
+    let firstError: string | null = collected.success.incomplete ? "source_incomplete" : null;
     const valid: Candidate[] = [];
     for (const raw of candidates) {
       const decoded = Schema.decodeUnknownResult(Candidate)(raw);
       if (decoded._tag === "Success") valid.push(decoded.success);
       else {
         rejected++;
-        firstError ??= short(String(decoded.failure));
+        firstError ??= "invalid_candidate";
       }
     }
 
@@ -149,8 +148,20 @@ export const runSource = (source: Source) =>
           .select("dedupe_key")
           .eq("source_id", sourceId)
           .in("dedupe_key", keys.slice(i, i + 100)),
-      );
-      for (const f of found ?? []) existing.add(f.dedupe_key);
+      ).pipe(Effect.result);
+      if (found._tag === "Failure") {
+        return yield* finish({
+          source: def.slug,
+          status: "failed",
+          fetched,
+          matched: valid.length,
+          inserted: 0,
+          updated: 0,
+          rejected,
+          error: "listing_lookup_failed",
+        });
+      }
+      for (const f of found.success ?? []) existing.add(f.dedupe_key);
     }
 
     let inserted = 0;
@@ -158,7 +169,11 @@ export const runSource = (source: Source) =>
     for (const c of valid) {
       const written = yield* dbCall("ingest listing", () =>
         client.rpc("ingest_listing", {
-          p_listing: { ...c.listing, source_id: sourceId },
+          p_listing: {
+            ...c.listing,
+            source_id: sourceId,
+            discovered_by: def.method === "curated" ? "curated" : "deterministic",
+          },
           p_occurrences: c.occurrences,
           p_evidence: c.evidence,
         }),
@@ -166,9 +181,10 @@ export const runSource = (source: Source) =>
       if (written._tag === "Success") {
         if (existing.has(c.listing.dedupe_key)) updated++;
         else inserted++;
+        existing.add(c.listing.dedupe_key);
       } else {
         rejected++;
-        firstError ??= short(`${c.listing.dedupe_key}: ${written.failure.message}`);
+        firstError ??= "listing_write_failed";
       }
     }
 

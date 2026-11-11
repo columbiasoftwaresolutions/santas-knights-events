@@ -108,6 +108,7 @@ export interface SourceResult {
   candidates: ReadonlyArray<unknown>;
   // The moment the data was fetched, used as captured_at for page-level quotes.
   fetchedAt: string;
+  incomplete?: boolean;
 }
 
 export interface Source {

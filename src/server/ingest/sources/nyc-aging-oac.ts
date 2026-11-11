@@ -3,7 +3,7 @@ import type { Borough } from "@/lib/listings/schema";
 
 import { listingPayload, occurrence } from "../build";
 import { fetchText, type FetchImpl } from "../http";
-import { containsQuote, htmlToText } from "../quote";
+import { stringRow } from "../rows";
 import { classifyDiscipline } from "../taxonomy";
 import type { Source, SourceDef, SourceResult } from "../types";
 
@@ -57,25 +57,37 @@ const parts = (floating: string | undefined) => {
 };
 
 // Groups rows into one listing per center and activity name, with one session per row.
-// `policyVerified` says whether the NYC Aging page really carries the free quote today.
-export function parseOac(
-  json: string,
-  fetchedAt: string,
-  policyVerified: boolean,
-  today: string,
-): SourceResult {
+// Free membership does not prove that an individual activity is free.
+export function parseOac(json: string, fetchedAt: string, today: string): SourceResult {
   const rows: unknown = JSON.parse(json);
   // Socrata answers an outage with a JSON object, not a list. That is a failed run, not "no rows".
   if (!Array.isArray(rows)) throw new Error("Unexpected response from NYC Open Data");
-  return parseOacRows(rows as OacRow[], fetchedAt, policyVerified, today);
+  const valid = rows.flatMap((row) => {
+    const value = stringRow(row, [
+      "dfta_id",
+      "providername",
+      "eventname",
+      "description",
+      "eventlocation",
+      "zipcode",
+      "borough",
+      "starttime",
+      "endtime",
+      "isvirtual",
+      "latitude",
+      "longitude",
+    ]);
+    return value ? [value] : [];
+  });
+  const result = parseOacRows(valid, fetchedAt, today);
+  return {
+    ...result,
+    fetched: rows.length,
+    rejected: result.rejected + rows.length - valid.length,
+  };
 }
 
-function parseOacRows(
-  rows: OacRow[],
-  fetchedAt: string,
-  policyVerified: boolean,
-  today: string,
-): SourceResult {
+function parseOacRows(rows: OacRow[], fetchedAt: string, today: string): SourceResult {
   const groups = new Map<string, OacRow[]>();
   let rejected = 0;
 
@@ -101,7 +113,7 @@ function parseOacRows(
   const candidates = [...groups.entries()].map(([key, group]) => {
     const first = group[0]!;
     const name = first.eventname!.trim();
-    const cost = policyVerified ? "free_with_registration" : "unverified";
+    const cost = "unverified";
     const borough = BOROUGHS[(first.borough ?? "").trim().toLowerCase()] ?? null;
     const lat = Number(first.latitude);
     const lng = Number(first.longitude);
@@ -124,7 +136,8 @@ function parseOacRows(
         latitude: Number.isFinite(lat) && lat !== 0 ? lat : null,
         longitude: Number.isFinite(lng) && lng !== 0 ? lng : null,
         source_url: DEF.url,
-        registration_notes: policyVerified ? "Free with older adult center membership" : null,
+        registration_notes:
+          "Membership is free for New Yorkers ages 60+. Confirm activity fees with the center.",
         cost_status: cost,
       }),
       occurrences: group.flatMap((row) => {
@@ -136,17 +149,7 @@ function parseOacRows(
           occurrence(startsAt, e ? nyInstant(e.day, e.time) : null, `${key}:${row.starttime}`),
         ];
       }),
-      evidence: policyVerified
-        ? [
-            {
-              quote: OAC_POLICY_QUOTE,
-              url: OAC_POLICY_URL,
-              captured_at: fetchedAt,
-              method: "html" as const,
-              supports_cost_status: cost,
-            },
-          ]
-        : [],
+      evidence: [],
     };
   });
 
@@ -166,11 +169,7 @@ export function nycAgingOac(fetchImpl: FetchImpl = fetch): Source {
       const fetchedAt = new Date().toISOString();
       const today = nyToday();
       const json = await fetchText(oacUrl(), { fetchImpl, accept: "application/json" });
-      // The free claim comes from a page, so prove the quote is still on it today.
-      const policyVerified = await fetchText(OAC_POLICY_URL, { fetchImpl })
-        .then((html) => containsQuote(htmlToText(html), OAC_POLICY_QUOTE))
-        .catch(() => false);
-      return parseOac(json, fetchedAt, policyVerified, today);
+      return parseOac(json, fetchedAt, today);
     },
   };
 }
