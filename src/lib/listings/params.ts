@@ -19,9 +19,10 @@ export function parseFilters(params: Params): Filters {
 }
 
 // Link that sets one filter, or clears it when it is already set to that value.
+// An empty value clears the filter, which is how "All free sessions" is selected.
 export function toggleHref(filters: Filters, key: keyof Filters, value: string): string {
   const next: Record<string, string | undefined> = { ...filters };
-  next[key] = next[key] === value ? undefined : value;
+  next[key] = value === "" || next[key] === value ? undefined : value;
   return hrefFor(next);
 }
 
