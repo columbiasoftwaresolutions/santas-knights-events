@@ -14,7 +14,7 @@ Public visibility is simply `status = active`. Adapters explicitly send `active`
 
 ## Sources and demo
 
-Start with one Parks JSON adapter and individually checked curated offerings. See [sources](sources.md) for research and access limitations: library parsers remain unverified, NYC Open Data is historical discovery until currency is established, and Bryant Park’s verified 2026 seasons have ended. Do not invent winter listings, assume center-level martial arts schedules or carry summer sessions forward. Honest empty results are acceptable.
+Start with one Parks adapter that reads the NYC Open Data mirror of the Parks events feed (`w3wp-dpdi`; Parks’ own `/xml/` path is disallowed by its robots.txt) plus individually checked curated offerings. See [sources](sources.md) for research and access limitations: library parsers remain unverified, other NYC Open Data tables are historical discovery unless their currency is shown, and Bryant Park’s verified 2026 seasons have ended. Do not invent winter listings, assume center-level martial arts schedules or carry summer sessions forward. Honest empty results are acceptable.
 
 The demo needs one real import, an idempotent repeat, current curated records where verified, search/filter/map behavior, evidence on every free result and private ingestion-run counts/errors. The migration seeds taxonomy only.
 
