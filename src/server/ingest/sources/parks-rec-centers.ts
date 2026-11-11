@@ -101,9 +101,22 @@ export function parseCenterIndex(html: string): { centerCode: string; centerName
   return [...centers].map(([centerCode, centerName]) => ({ centerCode, centerName }));
 }
 
-export function isMartialArts(title: string, description = ""): boolean {
-  return classifyDiscipline(`${title} ${description}`) !== null;
+// The title decides. A description that merely mentions tai chi ("Seated Movements:
+// yoga, tai chi and chair exercise") is not a tai chi class.
+export function isMartialArts(title: string): boolean {
+  return classifyDiscipline(title) !== null;
 }
+
+// Parks center codes start with the borough letter, as park ids do (M058, B126, Q099, X..., R...).
+const BOROUGH_BY_CODE_PREFIX: Record<string, Borough> = {
+  M: "Manhattan",
+  B: "Brooklyn",
+  Q: "Queens",
+  X: "Bronx",
+  R: "Staten Island",
+};
+export const boroughFromCenterCode = (code: string): Borough | null =>
+  BOROUGH_BY_CODE_PREFIX[code.charAt(0).toUpperCase()] ?? null;
 
 // Select the closest valid M/D to the New York fetch date, not simply its year.
 // That covers a week straddling New Year in either direction.
@@ -200,7 +213,7 @@ export function parseSchedulePage(
       (p) => !p.attrs.class && !/^(Instructor|Intensity|Ages):/i.test(text(p)),
     );
     const description = prose.slice(1).map(text).join("\n");
-    const discipline = classifyDiscipline(`${title} ${description}`);
+    const discipline = classifyDiscipline(title);
     if (!title || !discipline) {
       rejected++;
       continue;
@@ -253,7 +266,7 @@ export function parseSchedulePage(
         eligibility: null,
         venue,
         address: null,
-        borough: null,
+        borough: boroughFromCenterCode(context.centerCode),
         neighborhood: null,
         latitude: null,
         longitude: null,
@@ -357,7 +370,12 @@ export const parksRecCenters = {
         const detail = await get(`${INDEX}/${center.centerCode}`);
         if (detail) {
           const location = parseCenterDetails(detail);
-          for (const candidate of page.candidates) Object.assign(candidate.listing, location);
+          for (const candidate of page.candidates) {
+            Object.assign(candidate.listing, {
+              ...location,
+              borough: location.borough ?? candidate.listing.borough,
+            });
+          }
         }
       }
       if (stopped) break;

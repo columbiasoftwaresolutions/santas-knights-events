@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Candidate } from "../types";
 import {
+  boroughFromCenterCode,
   isMartialArts,
   PARKS_USER_AGENT,
   parksRecCenters,
@@ -42,6 +43,17 @@ function sample(
 
 afterEach(() => vi.useRealTimers());
 
+describe("borough from the center code", () => {
+  it("maps the leading letter and leaves anything else unknown", () => {
+    expect(boroughFromCenterCode("M058")).toBe("Manhattan");
+    expect(boroughFromCenterCode("B126")).toBe("Brooklyn");
+    expect(boroughFromCenterCode("Q099-NMD01")).toBe("Queens");
+    expect(boroughFromCenterCode("X012")).toBe("Bronx");
+    expect(boroughFromCenterCode("R001")).toBe("Staten Island");
+    expect(boroughFromCenterCode("Z999")).toBeNull();
+  });
+});
+
 describe("Parks recreation-center HTML", () => {
   it("reads distinct centers, ignores detail-only, foreign and non-center links", () => {
     expect(
@@ -75,7 +87,8 @@ describe("Parks recreation-center HTML", () => {
         ages_text: "Everyone",
         venue: context.centerName,
         address: null,
-        borough: null,
+        // M058 starts with M: Manhattan. The center page itself shows no borough.
+        borough: "Manhattan",
         neighborhood: null,
         latitude: null,
         longitude: null,
@@ -184,9 +197,11 @@ describe("Parks recreation-center HTML", () => {
 
   it("uses word boundaries, rejecting Filmmaking while recognizing MMA as a standalone word", () => {
     expect(isMartialArts("Filmmaking")).toBe(false);
-    expect(isMartialArts("Swimming", "Improve your swimming")).toBe(false);
+    expect(isMartialArts("Swimming")).toBe(false);
     expect(isMartialArts("MMA fundamentals")).toBe(true);
-    expect(isMartialArts("Fitness", "Practice tai chi")).toBe(true);
+    // The title decides: a description that mentions tai chi does not make a class tai chi.
+    expect(isMartialArts("Seated Movements")).toBe(false);
+    expect(isMartialArts("Tai Chi")).toBe(true);
     const result = parseSchedulePage(
       sample().replaceAll("Karate", "Filmmaking").replaceAll("karate", "filmmaking"),
       context,
