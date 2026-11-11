@@ -10,7 +10,9 @@
     "lint:fix": "oxlint --fix",
     "typecheck": "next typegen && tsc --noEmit",
     "format": "oxfmt",
-    "format:check": "oxfmt --check"
+    "format:check": "oxfmt --check",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -30,12 +32,15 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "lint-staged": "^17.6.0",
     "oxfmt": "^0.78.0",
     "oxlint": "^1.93.0",
+    "simple-git-hooks": "^2.14.0",
     "supabase": "^3.1.0",
     "tailwindcss": "4.3.3",
     "typescript": "^5",
-    "vercel": "^65.14.0"
+    "vercel": "^65.14.0",
+    "vitest": "^5.1.0"
   },
   "packageManager": "pnpm@10.6.5"
 }

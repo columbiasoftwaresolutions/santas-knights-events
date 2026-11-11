@@ -1,0 +1,44 @@
+import { Effect } from "effect";
+import { describe, expect, it } from "vitest";
+
+import { ListingRepo } from "./listing-repo";
+
+const run = <A>(effect: Effect.Effect<A, unknown, ListingRepo>) =>
+  Effect.runPromise(effect.pipe(Effect.provide(ListingRepo.sample)));
+
+const search = (filters: Parameters<ListingRepo["Service"]["search"]>[0]) =>
+  run(
+    Effect.gen(function* () {
+      const repo = yield* ListingRepo;
+      return yield* repo.search(filters);
+    }),
+  );
+
+describe("ListingRepo.sample", () => {
+  it("returns every listing sorted by day and time, unscheduled last", async () => {
+    const all = await search({});
+    const keys = all.map((l) => `${l.day ?? "9999"}${l.startTime ?? ""}`);
+    expect(keys).toEqual([...keys].sort());
+    expect(all.at(-1)?.day).toBeNull();
+  });
+
+  it("filters by borough and cost together", async () => {
+    const hits = await search({ borough: "Bronx", cost: "free" });
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits.every((l) => l.borough === "Bronx" && l.costStatus === "free")).toBe(true);
+  });
+
+  it("never marks a listing free without evidence", async () => {
+    const all = await search({});
+    for (const l of all) {
+      if (l.costStatus === "free" || l.costStatus === "free_with_registration") {
+        expect(l.evidence, l.title).not.toBeNull();
+      }
+    }
+  });
+
+  it("searches across title, venue and neighborhood", async () => {
+    const hits = await search({ q: "harlem" });
+    expect(hits.some((l) => l.neighborhood === "Harlem")).toBe(true);
+  });
+});
