@@ -146,9 +146,11 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
                 </>
               )}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Sample data: invented listings, no source links.
-            </p>
+            {[...results, ...forWeek].some((l) => l.isSample) && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Sample data: invented listings, no source links.
+              </p>
+            )}
 
             {results.length === 0 ? (
               <EmptyState filters={filters} />
