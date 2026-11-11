@@ -65,6 +65,7 @@ export class ListingRepo extends Context.Service<
             Effect.map((l): Listing | null => l),
             Effect.catch((error) =>
               Effect.sync(() => {
+                // oxlint-disable-next-line no-console -- the only record of a skipped listing
                 console.error("Skipped a listing that failed validation", String(error));
                 return null;
               }),

@@ -158,10 +158,12 @@ export function curated(
       };
 
       const candidates = [];
+      // Sequential on purpose: one polite request per page, and a shared page cache.
       for (const entry of entries) {
         let listing = listingPayload(entry.listing);
         const evidence = [];
         if (entry.evidence) {
+          // oxlint-disable-next-line no-await-in-loop -- sequential and cached by design
           const text = await load(entry.evidence.url);
           if (text && containsQuote(text, entry.evidence.quote)) {
             evidence.push({
