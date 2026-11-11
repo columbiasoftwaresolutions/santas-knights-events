@@ -1,18 +1,18 @@
 # Server/data architecture
 
-React stays plain React. Server components use `ListingRepo`; ingestion runs in authenticated server route handlers. Keep supabase-js, runtime creation and credentials in server-only modules. Use Effect 4’s installed `Context.Service`, `Schema`, `Effect.fn`, `Layer` and `ManagedRuntime` APIs. The sample repository remains an explicit demo mode; database errors must not silently select it.
+React stays plain React. Server components use `ListingRepo`; ingestion runs in authenticated server route handlers. Keep supabase-js, runtime creation and credentials in server-only modules. The implementation uses Effect 4’s installed `Context.Service`, `Schema`, `Effect.fn`, `Layer` and `Effect.runPromise` APIs. The sample repository remains an explicit demo mode; database errors must not silently select it.
 
 ## Boundaries
 
-Use a public-key Supabase client for directory reads and a separate service-role client for ingestion, with session persistence/refresh disabled. Never render public results with the privileged client. A Supabase service owns the client; wrap thenable queries with `Effect.tryPromise`, inspect the returned `error`, and map failures to typed database errors. Maintain separate read and ingestion runtimes.
+Use a public-key Supabase client for directory reads and a separate service-role client for ingestion, with session persistence/refresh disabled. Never render public results with the privileged client. A Supabase service owns the client; wrap thenable queries with `Effect.tryPromise`, inspect the returned `error`, and map failures to typed database errors. Provide separate public-read and privileged-ingestion layers per request. A shared managed runtime is deferred.
 
-The Supabase-backed `ListingRepo` selects active listings and noncancelled occurrences, joins current matching evidence/source names, projects into the UI model and decodes at the boundary. Unknown values remain null in the existing nullable UI model; each projected session has a unique `sessionId` alongside the shared listing `id`. Apply New York local date boundaries as instant ranges, including DST. Use the generated search document for full-text search, SQL filters and coordinate bounding boxes; the existing indexes do not promise distance ordering.
+The Supabase-backed `ListingRepo` selects active listings and noncancelled occurrences, joins current matching evidence/source names, projects into the UI model and decodes at the boundary. Unknown values remain null in the existing nullable UI model; each projected session has a unique `sessionId` alongside the shared listing `id`. Projection applies a seven-day New York local window, including DST. Search and facets currently run in memory over at most 2,000 listings. SQL search and windowed/paginated reads are deferred; the schema has indexes ready for that work.
 
 Ingestion is fetch → source Schema decode → normalize → dedupe → RPC → finish run. Source adapters validate identity, NYC location, dates, eligibility and applicable explicit cost text. Keywords only find candidates. Normalize HTML to safe text, validate URLs/coordinates and preserve unknown values. Send `status: "active"` explicitly when suitable for publication; omitted status becomes hidden. No review/approval workflow runs here. Classify parse/normalize/fetch/database errors, sanitize logs and count rejected candidates.
 
 ## Transaction contract
 
-The initial migration defines `public.ingest_listing(p_listing jsonb, p_occurrences jsonb, p_evidence jsonb) returns uuid`. Call with `client.rpc("ingest_listing", { p_listing, p_occurrences, p_evidence })`. This is implemented SQL; the Effect adapter and route remain to build.
+The initial migration defines `public.ingest_listing(p_listing jsonb, p_occurrences jsonb, p_evidence jsonb) returns uuid`. Call with `client.rpc("ingest_listing", { p_listing, p_occurrences, p_evidence })`. The Effect runner and authenticated cron route call this implemented SQL.
 
 - `p_listing` is a **full normalized snapshot**, using SQL column names. Required: `source_id`, `dedupe_key`, `title`, `category_slug`, `source_url`. Other writable listing fields are optional; omissions reset them to null/defaults (`status` hidden, `cost_status` unverified, `discovered_by` deterministic). Identity, first/last-seen and verification timestamps are database-controlled. Upsert identity is `(source_id, dedupe_key)`; `first_seen_at` is preserved and `last_seen_at` refreshed.
 - `p_occurrences` is an array (use `[]` for none) of `starts_at`, optional `ends_at`, `source_occurrence_key` and `cancelled`. Upsert by stable source key when supplied, otherwise by `(listing_id, starts_at)`. Keyed rescheduling preserves the occurrence ID. An unkeyed update at the same instant preserves any existing source key; different non-null keys at one instant are rejected rather than overwriting identity. Omitted occurrences remain; cancellation must be explicit. A keyed reschedule onto another occurrence’s start time fails atomically.
@@ -26,7 +26,7 @@ Use plain service-role inserts/updates for `ingestion_runs`: insert a running re
 
 ## Cron and deferred work
 
-A future `GET(request: Request): Promise<Response>` route verifies the configured cron bearer secret before creating the privileged client or fetching sources. Run ingestion through the managed runtime, return counts on success and sanitized non-2xx errors on failure. Use cancellation/time limits, bounded transient retries and short per-source runs. Deployment cadence and execution limits must be checked before scheduling.
+The implemented `GET(request: Request): Promise<Response>` route verifies the cron bearer secret before creating the privileged client or fetching sources. It provides the admin layer to `runSource`, returns counts on success, 503 for partial/failed summaries and 500 for infrastructure failures. Errors use stable codes. The rec-center scan has a 240-second collection budget and 20-second request limits below the route’s 300-second ceiling. Full Effect cancellation propagation and a shared write/finalization deadline remain deferred. See `vercel.json` for daily and weekly schedules.
 
 Deferred: review workflow, freshness/stale marking, AI discovery and admin UI.
 
