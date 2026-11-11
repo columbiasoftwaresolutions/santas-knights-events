@@ -20,6 +20,23 @@ pnpm build
 
 The listings shown are invented sample data. Every real listing links to its official page, and to a registration page when there is one (`src/lib/listings/links.ts`). Source URLs are untrusted, so only `http(s)` links without credentials are accepted (`src/lib/listings/url.ts`).
 
+## Data and deployment
+
+The directory reads Supabase with the public key. Listings arrive through `/api/cron/ingest?source=<slug>`, which
+needs `Authorization: Bearer $CRON_SECRET` and writes with the service role key through the `ingest_listing` function.
+Vercel Cron (`vercel.json`) runs each source on its own schedule:
+
+| Source (`slug`)     | What it reads                                         | Runs    | Free status it can give                           |
+| ------------------- | ----------------------------------------------------- | ------- | ------------------------------------------------- |
+| `curated`           | Reviewed listings in `ingest/sources/curated.ts`      | daily   | From a quote re-checked on the live page each run |
+| `parks-events`      | NYC Parks events via NYC Open Data (`w3wp-dpdi`)      | daily   | Only from an event sentence that says free        |
+| `nyc-aging-oac`     | NYC Aging older adult center activities (`fzy4-e84j`) | Mondays | Free with membership, quote re-checked each run   |
+| `parks-rec-centers` | Parks recreation-center schedule pages                | Mondays | Never. Parks says martial arts may carry fees     |
+
+A deployed app never shows invented data. If Supabase is empty the page says so, and if it is unreachable an error
+page shows. `LISTINGS_SOURCE=sample`, or running locally without Supabase settings, uses the demo data.
+See `docs/source-strategy.md` for why these sources, and `.env.example` for the settings.
+
 ## Code quality
 
 | Command             | What it does                                              |
