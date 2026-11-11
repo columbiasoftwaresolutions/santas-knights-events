@@ -116,16 +116,15 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
             {Object.entries(filters).map(([k, v]) =>
               v && k !== "q" ? <input key={k} type="hidden" name={k} value={v} /> : null,
             )}
-            <Input
-              name="q"
-              defaultValue={filters.q}
-              placeholder="Judo, Harlem, tai chi"
-              aria-label="Search listings"
-              className="h-10 flex-1 rounded-none border-input bg-card"
-            />
-            <Button type="submit" className="h-10 rounded-none px-5 font-heading font-bold">
-              Search
-            </Button>
+            <div className="flex-1">
+              <Input
+                name="q"
+                defaultValue={filters.q}
+                placeholder="Judo, Harlem, tai chi"
+                aria-label="Search listings"
+              />
+            </div>
+            <Button type="submit">Search</Button>
           </form>
         </div>
       </header>
@@ -133,7 +132,7 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
       <main className="mx-auto w-full max-w-6xl flex-1 px-5 pt-6 pb-16">
         <WeekStrip listings={forWeek} filters={filters} />
 
-        <div className="mt-8 grid gap-10 md:grid-cols-[13.5rem_1fr]">
+        <div className="mt-8 grid directory-grid gap-10">
           <aside>
             <details className="group md:hidden">
               <summary className="cursor-pointer border-y-2 border-ink py-2 font-heading text-base font-bold marker:content-none">

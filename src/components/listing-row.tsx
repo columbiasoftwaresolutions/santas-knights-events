@@ -9,7 +9,7 @@ export function ListingRow({ listing: l }: { listing: Listing }) {
   const where = [l.venue, l.neighborhood, l.borough].filter(Boolean).join(", ");
 
   return (
-    <li className="grid grid-cols-[4.75rem_1fr] gap-x-5 border-t border-rule py-5 sm:grid-cols-[6.5rem_1fr]">
+    <li className="listing-row-grid gap-x-5 border-t border-rule py-5">
       <div className="display text-3xl sm:text-4xl">
         {start ? (
           <>

@@ -111,6 +111,29 @@
   }
 }
 
+/* Layout recipes that need column widths outside Tailwind's scale. Named here so
+   components never use arbitrary values. */
+@utility listing-row-grid {
+  display: grid;
+  grid-template-columns: 4.75rem 1fr;
+  @variant sm {
+    grid-template-columns: 6.5rem 1fr;
+  }
+}
+
+@utility directory-grid {
+  @variant md {
+    grid-template-columns: 13.5rem 1fr;
+  }
+}
+
+/* Smaller cost mark used in the week strip. */
+@utility mark-sm {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-width: 1.5px;
+}
+
 @layer components {
   /* Condensed, heavy Archivo. The width axis does the work, not a second family. */
   .display {
