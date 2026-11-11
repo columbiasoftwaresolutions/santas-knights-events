@@ -13,6 +13,7 @@
   },
   "rules": {
     "no-console": "warn",
+    "no-underscore-dangle": ["warn", { "allow": ["_tag"] }],
     "eqeqeq": "error",
     "no-var": "error",
     "prefer-const": "error",
