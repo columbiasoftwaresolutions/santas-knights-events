@@ -1,15 +1,22 @@
-import { Suspense } from "react";
+import { Effect } from "effect";
 import Link from "next/link";
 import { connection } from "next/server";
-import { Effect } from "effect";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Suspense } from "react";
+
 import { FilterColumn, type Facet } from "@/components/filter-column";
 import { ListingRow } from "@/components/listing-row";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { WeekStrip } from "@/components/week-strip";
 import { longDay } from "@/lib/dates";
 import { hrefFor, parseFilters } from "@/lib/listings/params";
-import { BOROUGHS, COST_LABEL, COST_STATUSES, type Filters, type Listing } from "@/lib/listings/schema";
+import {
+  BOROUGHS,
+  COST_LABEL,
+  COST_STATUSES,
+  type Filters,
+  type Listing,
+} from "@/lib/listings/schema";
 import { ListingRepo } from "@/server/listing-repo";
 import { runServer } from "@/server/run";
 
@@ -42,7 +49,7 @@ export default function Home(props: PageProps<"/">) {
     <Suspense
       fallback={
         <header className="border-b border-rule">
-          <div className="mx-auto w-full max-w-6xl px-5 pb-5 pt-7">
+          <div className="mx-auto w-full max-w-6xl px-5 pt-7 pb-5">
             <Title />
           </div>
         </header>
@@ -77,7 +84,11 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
     {
       key: "cost",
       title: "Cost",
-      options: COST_STATUSES.map((s) => ({ value: s, label: COST_LABEL[s], count: costCount.get(s) ?? 0 })),
+      options: COST_STATUSES.map((s) => ({
+        value: s,
+        label: COST_LABEL[s],
+        count: costCount.get(s) ?? 0,
+      })),
     },
     {
       key: "borough",
@@ -99,7 +110,7 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
   return (
     <>
       <header className="border-b border-rule">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-end justify-between gap-x-10 gap-y-4 px-5 pb-5 pt-7">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-end justify-between gap-x-10 gap-y-4 px-5 pt-7 pb-5">
           <Title />
           <form action="/" className="flex w-full max-w-sm gap-2 sm:w-auto sm:min-w-80">
             {Object.entries(filters).map(([k, v]) =>
@@ -119,7 +130,7 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-16 pt-6">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-5 pt-6 pb-16">
         <WeekStrip listings={forWeek} filters={filters} />
 
         <div className="mt-8 grid gap-10 md:grid-cols-[13.5rem_1fr]">
@@ -146,7 +157,10 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
               {active && (
                 <>
                   {" "}
-                  <Link href="/" className="font-semibold text-primary underline underline-offset-4">
+                  <Link
+                    href="/"
+                    className="font-semibold text-primary underline underline-offset-4"
+                  >
                     Clear filters
                   </Link>
                 </>
@@ -159,7 +173,10 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
                 <p className="font-heading text-xl font-bold">Nothing matches that combination.</p>
                 <p className="mt-1 text-muted-foreground">
                   Remove a filter, or{" "}
-                  <Link href={hrefFor({})} className="font-semibold text-primary underline underline-offset-4">
+                  <Link
+                    href={hrefFor({})}
+                    className="font-semibold text-primary underline underline-offset-4"
+                  >
                     see the whole week
                   </Link>
                   .
@@ -168,7 +185,9 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
             ) : (
               [...byDay.entries()].map(([day, rows]) => (
                 <div key={day} className="mt-6">
-                  <h2 className="font-heading text-lg font-bold border-b-2 border-ink pb-1">{day === "unscheduled" ? "Schedule not confirmed" : longDay(day)}</h2>
+                  <h2 className="border-b-2 border-ink pb-1 font-heading text-lg font-bold">
+                    {day === "unscheduled" ? "Schedule not confirmed" : longDay(day)}
+                  </h2>
                   <ul>
                     {rows.map((l) => (
                       <ListingRow key={l.id} listing={l} />

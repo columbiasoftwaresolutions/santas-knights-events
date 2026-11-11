@@ -3,13 +3,7 @@ import { Schema } from "effect";
 // Domain model for what the UI consumes. The Supabase layer will decode rows
 // into these same classes, so pages never see database shapes.
 
-export const BOROUGHS = [
-  "Manhattan",
-  "Brooklyn",
-  "Queens",
-  "Bronx",
-  "Staten Island",
-] as const;
+export const BOROUGHS = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"] as const;
 export const Borough = Schema.Literals(BOROUGHS);
 export type Borough = typeof Borough.Type;
 

@@ -1,5 +1,6 @@
 import { clock12, shortDate } from "@/lib/dates";
 import type { Listing } from "@/lib/listings/schema";
+
 import { CostMark } from "./cost-mark";
 
 export function ListingRow({ listing: l }: { listing: Listing }) {
@@ -26,7 +27,7 @@ export function ListingRow({ listing: l }: { listing: Listing }) {
       </div>
 
       <div className="min-w-0">
-        <h3 className="font-heading text-xl font-bold leading-tight">{l.title}</h3>
+        <h3 className="font-heading text-xl leading-tight font-bold">{l.title}</h3>
         <p className="mt-1 text-sm text-muted-foreground">
           {[where, l.ages].filter(Boolean).join(". ") || "Location not listed"}
           {where || l.ages ? "." : ""}

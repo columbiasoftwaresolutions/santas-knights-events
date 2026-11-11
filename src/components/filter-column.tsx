@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import { toggleHref } from "@/lib/listings/params";
 import type { Filters } from "@/lib/listings/schema";
 
@@ -27,10 +28,12 @@ export function FilterColumn({ facets, filters }: { facets: Facet[]; filters: Fi
                     className="flex items-baseline justify-between gap-3 py-1.5 text-sm hover:text-primary"
                   >
                     <span className={on ? "font-bold" : ""}>
-                      {on && <span className="mr-2 inline-block h-2 w-2 bg-primary" aria-hidden="true" />}
+                      {on && (
+                        <span className="mr-2 inline-block h-2 w-2 bg-primary" aria-hidden="true" />
+                      )}
                       {o.label}
                     </span>
-                    <span className="tabular-nums text-muted-foreground">{o.count}</span>
+                    <span className="text-muted-foreground tabular-nums">{o.count}</span>
                   </Link>
                 </li>
               );
