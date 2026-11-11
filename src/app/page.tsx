@@ -82,27 +82,34 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
   ];
 
   const byDay = Map.groupBy(results, (l) => l.day ?? "unscheduled");
+  const undated = byDay.get("unscheduled")?.length ?? 0;
+  const dated = results.length - undated;
   const hasFilters = activeFilters(filters).length > 0;
 
   return (
     <>
+      <a href="#results" className="sr-only focus:not-sr-only focus:p-3">
+        Skip to results
+      </a>
       <header className="border-b border-rule">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-end justify-between gap-x-10 gap-y-4 px-5 pt-7 pb-5">
           <Title />
-          <form action="/" className="flex w-full max-w-sm gap-2 sm:w-auto sm:min-w-80">
-            {Object.entries(filters).map(([k, v]) =>
-              v && k !== "q" ? <input key={k} type="hidden" name={k} value={v} /> : null,
-            )}
-            <div className="flex-1">
-              <Input
-                name="q"
-                defaultValue={filters.q}
-                placeholder="Judo, Harlem, tai chi"
-                aria-label="Search listings"
-              />
-            </div>
-            <Button type="submit">Search</Button>
-          </form>
+          <search>
+            <form action="/" className="flex w-full max-w-sm gap-2 sm:w-auto sm:min-w-80">
+              {Object.entries(filters).map(([k, v]) =>
+                v && k !== "q" ? <input key={k} type="hidden" name={k} value={v} /> : null,
+              )}
+              <div className="flex-1">
+                <Input
+                  name="q"
+                  defaultValue={filters.q}
+                  placeholder="Judo, Harlem, tai chi"
+                  aria-label="Search listings"
+                />
+              </div>
+              <Button type="submit">Search</Button>
+            </form>
+          </search>
         </div>
       </header>
 
@@ -111,7 +118,7 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
 
         <div className="mt-8 grid directory-grid gap-10">
           <aside>
-            <details className="group md:hidden">
+            <details className="group lg:hidden">
               <summary className="flex cursor-pointer items-baseline justify-between gap-3 border-y-2 border-ink py-2 marker:content-none">
                 <span className="font-heading text-base font-bold">Filters</span>
                 <span className="min-w-0 truncate text-sm text-muted-foreground group-open:hidden">
@@ -126,14 +133,23 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
                 <FilterColumn facets={facets} filters={filters} idPrefix="m" />
               </div>
             </details>
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <FilterColumn facets={facets} filters={filters} idPrefix="d" />
             </div>
           </aside>
 
-          <section aria-label="Results">
+          <section id="results" aria-label="Results" tabIndex={-1}>
             <p className="text-sm text-muted-foreground">
-              {results.length} {results.length === 1 ? "session" : "sessions"}
+              {dated} {dated === 1 ? "session" : "sessions"} this week
+              {undated > 0 && (
+                <>
+                  {" "}
+                  ·{" "}
+                  <a href="#unscheduled" className="underline underline-offset-4">
+                    {undated} {undated === 1 ? "program" : "programs"} with schedules to confirm
+                  </a>
+                </>
+              )}
               {hasFilters && (
                 <>
                   {" "}
@@ -156,7 +172,11 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
               <EmptyState filters={filters} />
             ) : (
               [...byDay.entries()].map(([day, rows]) => (
-                <div key={day} className="mt-6">
+                <div
+                  key={day}
+                  id={day === "unscheduled" ? "unscheduled" : undefined}
+                  className="mt-6"
+                >
                   <h2 className="border-b-2 border-ink pb-1 font-heading text-lg font-bold">
                     {day === "unscheduled" ? "Schedule not confirmed" : longDay(day)}
                   </h2>

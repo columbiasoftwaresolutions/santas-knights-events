@@ -17,12 +17,11 @@ describe("listingLinks", () => {
     expect(links).toEqual({ source: null, register: null, evidenceHref: null });
   });
 
-  it("links to the official page, naming who published it", () => {
+  it("links to the official page", () => {
     const { source } = listingLinks(
       makeListing({ sourceName: "NYC Parks", sourceUrl: "https://www.nycgovparks.org/events/x" }),
     );
     expect(source?.href).toBe("https://www.nycgovparks.org/events/x");
-    expect(source?.label).toContain("NYC Parks");
   });
 
   it("offers registration only when there is a registration link", () => {

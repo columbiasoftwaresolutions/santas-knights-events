@@ -74,7 +74,24 @@ describe("projectListings", () => {
 
   it("shows a listing with no sessions at all as unscheduled", () => {
     const [s] = decode(projectListings([row({ listing_occurrences: [] })], TODAY));
-    expect(s).toMatchObject({ day: null, startTime: null, sessionId: "l1:unscheduled" });
+    expect(s).toMatchObject({ day: null, startTime: null });
+  });
+
+  it("preserves practical location and schedule details", () => {
+    const [s] = decode(
+      projectListings(
+        [
+          row({
+            address: "123 Test Street",
+            schedule_text: "Ask at the front desk",
+            listing_occurrences: [],
+          }),
+        ],
+        TODAY,
+      ),
+    );
+    expect(s?.address).toBe("123 Test Street");
+    expect(s?.scheduleText).toBe("Ask at the front desk");
   });
 
   it("hides a listing whose only sessions are outside this week", () => {

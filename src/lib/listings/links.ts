@@ -12,7 +12,13 @@ export interface ListingLinks {
 export function listingLinks(l: Listing): ListingLinks {
   if (l.isSample) return { source: null, register: null, evidenceHref: null };
   return {
-    source: { href: l.sourceUrl, label: `View on ${l.sourceName}` },
+    source: {
+      href: l.sourceUrl,
+      label:
+        new URL(l.sourceUrl).hostname === "data.cityofnewyork.us"
+          ? "View source dataset"
+          : "View class details",
+    },
     register: l.registrationUrl ? { href: l.registrationUrl, label: "Register" } : null,
     evidenceHref: l.evidence && l.evidence.url !== l.sourceUrl ? l.evidence.url : null,
   };

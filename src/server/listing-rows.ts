@@ -5,7 +5,7 @@ import { BOROUGHS } from "@/lib/listings/schema";
 // is tested without a database.
 
 export const LISTING_SELECT = [
-  "id,title,description,ages_text,eligibility,venue,borough,neighborhood,latitude,longitude",
+  "id,title,description,ages_text,eligibility,venue,address,schedule_text,borough,neighborhood,latitude,longitude",
   "cost_status,registration_url,registration_notes,source_url",
   "category:categories(name)",
   "discipline:disciplines(name)",
@@ -21,6 +21,8 @@ export interface ListingRow {
   ages_text: string | null;
   eligibility: string | null;
   venue: string | null;
+  address?: string | null;
+  schedule_text?: string | null;
   borough: string | null;
   neighborhood: string | null;
   latitude: number | null;
@@ -65,6 +67,8 @@ export function projectListings(rows: ReadonlyArray<ListingRow>, today: string):
       borough: BOROUGHS.find((b) => b === row.borough) ?? null,
       neighborhood: row.neighborhood,
       venue: row.venue,
+      address: row.address ?? null,
+      scheduleText: row.schedule_text ?? null,
       latitude: row.latitude,
       longitude: row.longitude,
       ages: row.ages_text,

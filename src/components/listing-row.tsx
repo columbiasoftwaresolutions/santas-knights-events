@@ -13,7 +13,7 @@ export function ListingRow({ listing: l }: { listing: Listing }) {
   const links = listingLinks(l);
 
   return (
-    <li className="listing-row-grid gap-x-5 border-t border-rule py-5">
+    <li className="listing-row-grid gap-x-5 gap-y-3 border-t border-rule py-5">
       <div className="display text-3xl sm:text-4xl">
         {start ? (
           <>
@@ -36,6 +36,9 @@ export function ListingRow({ listing: l }: { listing: Listing }) {
           {[where, l.ages].filter(Boolean).join(". ") || "Location not listed"}
           {where || l.ages ? "." : ""}
         </p>
+        {l.address && <p className="mt-1 text-sm">{l.address}</p>}
+        {!l.day && l.description && <p className="mt-2 text-sm">{l.description}</p>}
+        {!l.day && l.scheduleText && <p className="mt-1 text-sm">{l.scheduleText}</p>}
         {l.eligibility && <p className="mt-1 text-sm">{l.eligibility}</p>}
 
         <div className="mt-3 text-sm">
@@ -54,7 +57,8 @@ export function ListingRow({ listing: l }: { listing: Listing }) {
             </blockquote>
           ) : (
             <p className="mt-1.5 border-l-2 border-dashed border-input pl-3 text-muted-foreground">
-              No source text yet. Check with the organizer before you go.
+              Class cost is not confirmed. Membership or session fees may apply. Check with the
+              organizer before you go.
             </p>
           )}
         </div>
@@ -67,11 +71,13 @@ export function ListingRow({ listing: l }: { listing: Listing }) {
                 className={buttonVariants() + " no-underline"}
               >
                 {links.register.label}
+                <span className="sr-only"> for {l.title}</span>
               </OutboundLink>
             )}
             {links.source && (
               <OutboundLink href={links.source.href} className="font-semibold text-primary">
                 {links.source.label}
+                <span className="sr-only"> for {l.title}</span>
               </OutboundLink>
             )}
           </div>

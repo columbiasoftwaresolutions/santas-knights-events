@@ -63,7 +63,7 @@
   --destructive: #9e2536;
   --border: #d6c9b0;
   --rule: #cbbda4;
-  --input: #a99a7f;
+  --input: #8d7e65;
   --ring: #c2331f;
   --gold: #9a6f12;
   --green: #2e5e45;
@@ -115,14 +115,14 @@
    components never use arbitrary values. */
 @utility listing-row-grid {
   display: grid;
-  grid-template-columns: 4rem 1fr;
+  grid-template-columns: minmax(0, 1fr);
   @variant sm {
     grid-template-columns: 6.5rem 1fr;
   }
 }
 
 @utility directory-grid {
-  @variant md {
+  @variant lg {
     grid-template-columns: 13.5rem 1fr;
   }
 }
