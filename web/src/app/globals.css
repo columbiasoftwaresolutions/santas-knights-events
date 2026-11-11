@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/* Palette borrowed from santas-knights.vercel.app */
+@theme {
+  --color-paper: #f7f0e3;
+  --color-paper-raised: #fbf6ec;
+  --color-card: #fff;
+  --color-bone: #e8e2d4;
+  --color-ink: #16120f;
+  --color-ink2: #1a1512;
+  --color-muted: #6c6256;
+  --color-line: #e4d8c4;
+  --color-line-strong: #cbbda4;
+  --color-red: #c2331f;
+  --color-red-deep: #9e2536;
+  --color-gold: #c2912f;
+  --color-gold-soft: #f0e2c2;
+  --color-amber: #c98a3a;
+  --color-green: #2e5e45;
+  --color-green-soft: #e7efe8;
+
+  --font-sans: var(--font-hanken), system-ui, sans-serif;
+  --font-display: var(--font-archivo), system-ui, sans-serif;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
