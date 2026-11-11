@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/cron/ingest?source=curated", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/ingest?source=parks-events", "schedule": "10 9 * * *" },
+    { "path": "/api/cron/ingest?source=nyc-aging-oac", "schedule": "20 9 * * 1" },
+    { "path": "/api/cron/ingest?source=parks-rec-centers", "schedule": "30 9 * * 1" }
+  ]
+}
