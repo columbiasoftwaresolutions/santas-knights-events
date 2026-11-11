@@ -32,7 +32,7 @@ const ROWS: Row[] = [
     "Riverside Community Center",
     "13 and up",
     "free",
-    "All mat sessions are free for NYC residents.",
+    "Open mat sessions are free. No experience needed.",
     "Center website",
   ],
   [
@@ -60,7 +60,7 @@ const ROWS: Row[] = [
     "Beacon center gym",
     "Ages 8 to 14",
     "free",
-    "Beacon programs are no-cost to youth.",
+    "Youth boxing is free. Drop in after school.",
     "City youth directory",
   ],
   [
@@ -112,12 +112,12 @@ const ROWS: Row[] = [
     "Muay Thai intro",
     "Muay Thai",
     "Manhattan",
-    "Bryant Park area",
-    "Terrace lawn",
+    "Chelsea",
+    "Community center, studio 2",
     "16 and up",
     "free_with_registration",
-    "Free sessions taught by local studios. RSVP required.",
-    "Park calendar",
+    "Free sessions led by local trainers. RSVP required.",
+    "Center website",
   ],
   [
     3,
@@ -151,7 +151,7 @@ const ROWS: Row[] = [
     4,
     "10:00",
     "11:00",
-    "Saturday family kung fu",
+    "Weekend family kung fu",
     "Kung fu",
     "Queens",
     "Flushing",
@@ -251,6 +251,17 @@ const GAPS = [
   },
 ];
 
+// Placeholder only. Rows are flagged isSample, so the UI never renders these as links.
+const PLACEHOLDER_URL = "https://example.invalid/sample";
+
+const registration = (cost: CostStatus) =>
+  cost === "free_with_registration"
+    ? {
+        registrationUrl: "https://example.invalid/register",
+        registrationNotes: "Register ahead. Space is limited.",
+      }
+    : { registrationUrl: null, registrationNotes: null };
+
 export function sampleRows(today: string) {
   const full = ROWS.map(
     (
@@ -271,6 +282,7 @@ export function sampleRows(today: string) {
       i,
     ) => ({
       id: `sample-${String(i + 1).padStart(3, "0")}`,
+      sessionId: `sample-${String(i + 1).padStart(3, "0")}`,
       title,
       category: "class",
       discipline,
@@ -285,12 +297,15 @@ export function sampleRows(today: string) {
       endTime,
       ages,
       eligibility: null,
-      registrationUrl: null,
+      ...registration(costStatus),
+      sourceName: source,
+      sourceUrl: PLACEHOLDER_URL,
+      isSample: true,
       costStatus,
       evidence: {
         quote,
         source,
-        url: "https://example.invalid/sample",
+        url: PLACEHOLDER_URL,
         checkedOn: addDays(today, -((i % 4) + 1)),
       },
     }),
@@ -305,9 +320,14 @@ export function sampleRows(today: string) {
     day: g.day === null ? null : addDays(today, g.day),
     eligibility: null,
     registrationUrl: null,
+    registrationNotes: null,
+    sessionId: g.id,
+    sourceName: g.evidence?.source ?? "Beacon directory",
+    sourceUrl: PLACEHOLDER_URL,
+    isSample: true,
     evidence: g.evidence && {
       ...g.evidence,
-      url: "https://example.invalid/sample",
+      url: PLACEHOLDER_URL,
       checkedOn: addDays(today, -2),
     },
   }));
