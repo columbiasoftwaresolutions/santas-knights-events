@@ -120,7 +120,9 @@ export function parksEventToCandidate(row: ParksRow, fetchedAt: string): unknown
 }
 
 export function parseParksEvents(json: string, fetchedAt: string): SourceResult {
-  const rows = JSON.parse(json) as ParksRow[];
+  const parsed: unknown = JSON.parse(json);
+  if (!Array.isArray(parsed)) throw new Error("Unexpected response from NYC Open Data");
+  const rows = parsed as ParksRow[];
   const candidates = rows.flatMap((row) => {
     const c = parksEventToCandidate(row, fetchedAt);
     return c ? [c] : [];

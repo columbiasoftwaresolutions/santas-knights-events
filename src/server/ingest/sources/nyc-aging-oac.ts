@@ -64,7 +64,18 @@ export function parseOac(
   policyVerified: boolean,
   today: string,
 ): SourceResult {
-  const rows = JSON.parse(json) as OacRow[];
+  const rows: unknown = JSON.parse(json);
+  // Socrata answers an outage with a JSON object, not a list. That is a failed run, not "no rows".
+  if (!Array.isArray(rows)) throw new Error("Unexpected response from NYC Open Data");
+  return parseOacRows(rows as OacRow[], fetchedAt, policyVerified, today);
+}
+
+function parseOacRows(
+  rows: OacRow[],
+  fetchedAt: string,
+  policyVerified: boolean,
+  today: string,
+): SourceResult {
   const groups = new Map<string, OacRow[]>();
   let rejected = 0;
 
@@ -142,24 +153,10 @@ export function parseOac(
   return { fetched: rows.length, rejected, candidates, fetchedAt };
 }
 
-const KEYWORDS = [
-  "tai chi",
-  "taichi",
-  "qigong",
-  "qi gong",
-  "karate",
-  "boxing",
-  "kung fu",
-  "self defense",
-  "self-defense",
-  "judo",
-  "martial",
-];
-
-export function oacQueryUrl(today: string): string {
-  const like = KEYWORDS.map((k) => `upper(eventname) like '%${k.toUpperCase()}%'`).join(" OR ");
-  const where = `starttime >= '${today}T00:00:00' AND (${like})`;
-  return `${OAC_DATASET}?$limit=1000&$where=${encodeURIComponent(where)}`;
+// The whole dataset is about 1,500 rows, so read it all and filter here. A server-side
+// LIKE filter was flaky (503) on Socrata and gains nothing at this size.
+export function oacUrl(): string {
+  return `${OAC_DATASET}?$limit=5000&$order=starttime`;
 }
 
 export function nycAgingOac(fetchImpl: FetchImpl = fetch): Source {
@@ -168,7 +165,7 @@ export function nycAgingOac(fetchImpl: FetchImpl = fetch): Source {
     collect: async () => {
       const fetchedAt = new Date().toISOString();
       const today = nyToday();
-      const json = await fetchText(oacQueryUrl(today), { fetchImpl, accept: "application/json" });
+      const json = await fetchText(oacUrl(), { fetchImpl, accept: "application/json" });
       // The free claim comes from a page, so prove the quote is still on it today.
       const policyVerified = await fetchText(OAC_POLICY_URL, { fetchImpl })
         .then((html) => containsQuote(htmlToText(html), OAC_POLICY_QUOTE))

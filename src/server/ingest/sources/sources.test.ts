@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { Candidate } from "../types";
 import { curated, CURATED } from "./curated";
-import { oacQueryUrl, parseOac, OAC_POLICY_QUOTE } from "./nyc-aging-oac";
+import { oacUrl, parseOac, OAC_POLICY_QUOTE } from "./nyc-aging-oac";
 import { freeSentence, parseParksEvents } from "./parks-events";
 
 const decode = Schema.decodeUnknownSync(Candidate);
@@ -145,10 +145,21 @@ describe("NYC Aging older adult centers", () => {
     expect(gone.evidence).toEqual([]);
   });
 
-  it("builds a bounded query", () => {
-    const url = oacQueryUrl("2026-11-11");
-    expect(url).toContain("%24limit=1000".replace("%24", "$"));
-    expect(decodeURIComponent(url)).toContain("starttime >= '2026-11-11T00:00:00'");
+  it("asks for a bounded read of the whole dataset", () => {
+    expect(oacUrl()).toBe(
+      "https://data.cityofnewyork.us/resource/fzy4-e84j.json?$limit=5000&$order=starttime",
+    );
+  });
+});
+
+describe("an outage answer is a failure, not an empty source", () => {
+  const outage = JSON.stringify({
+    message: "Service unavailable",
+    errorCode: "service-unavailable",
+  });
+  it("throws for both Open Data adapters", () => {
+    expect(() => parseOac(outage, FETCHED, true, "2026-11-11")).toThrow(/Unexpected response/);
+    expect(() => parseParksEvents(outage, FETCHED)).toThrow(/Unexpected response/);
   });
 });
 
