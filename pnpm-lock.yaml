@@ -45,6 +45,9 @@ importers:
       '@effect/language-service':
         specifier: ^0.87.5
         version: 0.87.5
+      '@electric-sql/pglite':
+        specifier: ^0.5.16
+        version: 0.5.16
       '@shadcn/lint':
         specifier: ^0.2.5
         version: 0.2.5
@@ -292,6 +295,9 @@ packages:
   '@effect/language-service@0.87.5':
     resolution: {integrity: sha512-np/zJgk71/PyHxtoqyUKLYcpQhoRBI+L6+1Z0ILk35JSQ/lvXzwlwOwddYZLDkeC4bdF2ukKekqKlla/F88R5w==}
     hasBin: true
+
+  '@electric-sql/pglite@0.5.16':
+    resolution: {integrity: sha512-Nj8KcIsJL748W408U2N8q4+9IlONdpRIU8MJypIAAINMJ5nqKyqpX7Mgg/5XKkXiAib3AoZGR6hnJFlrlLBrcg==}
 
   '@emnapi/core@2.0.0-beta.2':
     resolution: {integrity: sha512-MzCVoWtcg4Pm2B3je5mMvYMvj3MmBKw+fU7vbsJc9/iT8ip6/eYIHo/Dsm/mr+wsHB6SEyJDuxB09Yy6r/8+4A==}
@@ -4135,6 +4141,8 @@ snapshots:
       '@edge-runtime/primitives': 4.1.0
 
   '@effect/language-service@0.87.5': {}
+
+  '@electric-sql/pglite@0.5.16': {}
 
   '@emnapi/core@2.0.0-beta.2':
     dependencies:

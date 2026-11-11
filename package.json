@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@effect/language-service": "^0.87.5",
+    "@electric-sql/pglite": "^0.5.16",
     "@shadcn/lint": "^0.2.5",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^20",
