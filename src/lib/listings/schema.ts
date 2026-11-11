@@ -28,12 +28,34 @@ export const COST_LABEL: Record<CostStatus, string> = {
   unverified: "Cost not confirmed",
 };
 
+const NonBlank = Schema.String.check(
+  Schema.makeFilter((s: string) => s.trim() !== "" || "Must not be blank"),
+);
+
+// YYYY-MM-DD that is a real calendar date (rejects 2026-02-31).
+export const IsoDate = Schema.String.check(
+  Schema.makeFilter(
+    (s: string) =>
+      (/^\d{4}-\d{2}-\d{2}$/.test(s) && new Date(`${s}T12:00:00Z`).toISOString().startsWith(s)) ||
+      "Expected a real date as YYYY-MM-DD",
+  ),
+);
+
+// HH:mm on a 24-hour clock.
+export const ClockTime = Schema.String.check(
+  Schema.makeFilter(
+    (s: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(s) || "Expected a time as HH:mm",
+  ),
+);
+
 export class Evidence extends Schema.Class<Evidence>("sk/Evidence")({
-  quote: Schema.String,
-  source: Schema.String,
+  quote: NonBlank,
+  source: NonBlank,
+  // The cost claim this quote supports. A "free" listing needs a quote for "free".
+  supports: CostStatus,
   // Page the quote was captured from. May differ from the listing's own page.
   url: HttpUrl,
-  checkedOn: Schema.String, // YYYY-MM-DD
+  checkedOn: IsoDate,
 }) {}
 
 export const isFreeStatus = (status: CostStatus) =>
@@ -56,16 +78,16 @@ const ListingFields = Schema.Struct({
   venue: Schema.NullOr(Schema.String),
   latitude: Schema.NullOr(Schema.Number),
   longitude: Schema.NullOr(Schema.Number),
-  day: Schema.NullOr(Schema.String), // YYYY-MM-DD, New York local date
-  startTime: Schema.NullOr(Schema.String), // HH:mm, New York local time
-  endTime: Schema.NullOr(Schema.String),
+  day: Schema.NullOr(IsoDate), // New York local date
+  startTime: Schema.NullOr(ClockTime), // New York local time
+  endTime: Schema.NullOr(ClockTime),
   ages: Schema.NullOr(Schema.String),
   eligibility: Schema.NullOr(Schema.String),
   // Where to act (book or register). Often a third-party site.
   registrationUrl: Schema.NullOr(HttpUrl),
   registrationNotes: Schema.NullOr(Schema.String),
   // The official page for this listing, and who published it.
-  sourceName: Schema.String,
+  sourceName: NonBlank,
   sourceUrl: HttpUrl,
   // True for invented demo data. Its URLs are placeholders and are never shown as links.
   isSample: Schema.Boolean,
@@ -74,7 +96,10 @@ const ListingFields = Schema.Struct({
   evidence: Schema.NullOr(Evidence),
 }).check(
   Schema.makeFilter(
-    (l) => !isFreeStatus(l.costStatus) || l.evidence !== null || "A free listing needs evidence",
+    (l) =>
+      !isFreeStatus(l.costStatus) ||
+      (l.evidence !== null && l.evidence.supports === l.costStatus) ||
+      "A free listing needs evidence that supports that exact status",
   ),
 );
 

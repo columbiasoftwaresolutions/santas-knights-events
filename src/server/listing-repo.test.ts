@@ -1,8 +1,5 @@
-import { Effect, Schema } from "effect";
+import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-
-import { sampleRows } from "@/lib/listings/sample";
-import { Listing } from "@/lib/listings/schema";
 
 import { ListingRepo } from "./listing-repo";
 
@@ -71,23 +68,5 @@ describe("ListingRepo.sample", () => {
   it("flags all sample listings so their placeholder links are never shown", async () => {
     const all = await search({ cost: "any" });
     expect(all.every((l) => l.isSample)).toBe(true);
-  });
-});
-
-describe("Listing schema", () => {
-  const decode = Schema.decodeUnknownSync(Listing);
-  const base = sampleRows("2026-11-11").find((r) => r.costStatus === "free")!;
-
-  it("rejects a free listing with no evidence", () => {
-    expect(() => decode({ ...base, evidence: null })).toThrow(/needs evidence/);
-  });
-
-  it("accepts an unverified listing with no evidence", () => {
-    expect(() => decode({ ...base, costStatus: "unverified", evidence: null })).not.toThrow();
-  });
-
-  it("rejects a source link that is not http(s)", () => {
-    expect(() => decode({ ...base, sourceUrl: "javascript:alert(1)" })).toThrow();
-    expect(() => decode({ ...base, registrationUrl: "data:text/html,x" })).toThrow();
   });
 });

@@ -305,6 +305,7 @@ export function sampleRows(today: string) {
       evidence: {
         quote,
         source,
+        supports: costStatus,
         url: PLACEHOLDER_URL,
         checkedOn: addDays(today, -((i % 4) + 1)),
       },
@@ -327,6 +328,7 @@ export function sampleRows(today: string) {
     isSample: true,
     evidence: g.evidence && {
       ...g.evidence,
+      supports: g.costStatus,
       url: PLACEHOLDER_URL,
       checkedOn: addDays(today, -2),
     },
