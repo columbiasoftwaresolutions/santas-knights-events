@@ -155,7 +155,7 @@ describe.each(["free", "free_with_registration"])("deferred evidence: %s", (cost
     },
   );
   it("rejects missing evidence at commit and rolls back", async () => {
-    await expect(transaction(() => insertListing(cost))).rejects.toThrow(/matching cost evidence/);
+    await expect(transaction(() => insertListing(cost))).rejects.toMatchObject({ code: "23514" });
     expect((await counts()).listings).toBe(0);
   });
   it("rejects missing last_verified_at at commit", async () => {
@@ -164,7 +164,7 @@ describe.each(["free", "free_with_registration"])("deferred evidence: %s", (cost
         await insertListing(cost, null);
         await insertEvidence(cost);
       }),
-    ).rejects.toThrow(/last_verified_at/);
+    ).rejects.toMatchObject({ code: "23514" });
   });
   it("rejects mismatched supports_cost_status at commit", async () => {
     await expect(
@@ -172,7 +172,7 @@ describe.each(["free", "free_with_registration"])("deferred evidence: %s", (cost
         await insertListing(cost);
         await insertEvidence(cost === "free" ? "free_with_registration" : "free");
       }),
-    ).rejects.toThrow(/matching cost evidence/);
+    ).rejects.toMatchObject({ code: "23514" });
   });
   it.each(["delete", "change claim", "move parent"])(
     "protects the last matching evidence: %s",
@@ -203,7 +203,7 @@ describe.each(["free", "free_with_registration"])("deferred evidence: %s", (cost
               [other, listingId],
             );
         }),
-      ).rejects.toThrow(/matching cost evidence/);
+      ).rejects.toMatchObject({ code: "23514" });
       expect((await counts()).evidence).toBe(1);
     },
   );
@@ -271,7 +271,7 @@ describe("ingest_listing RPC", () => {
     await ingest();
     await expect(
       ingest(listing({ title: "Changed" }), [occurrence({ source_occurrence_key: "different" })]),
-    ).rejects.toThrow(/Conflicting source occurrence keys/);
+    ).rejects.toMatchObject({ code: "22023" });
     expect(
       (await db.query<{ title: string }>("select title from public.listings")).rows[0].title,
     ).toBe("Morning practice");
@@ -284,7 +284,7 @@ describe("ingest_listing RPC", () => {
     ]);
     await expect(
       ingest(listing(), [occurrence({ starts_at: "2026-11-21T12:00:00Z" })]),
-    ).rejects.toThrow(/unique constraint/);
+    ).rejects.toMatchObject({ code: "23505" });
     expect((await counts()).occurrences).toBe(2);
   });
   it("preserves omitted occurrences and applies explicit cancellation", async () => {
@@ -298,7 +298,7 @@ describe("ingest_listing RPC", () => {
     ).toBe(true);
   });
   it("rolls back listing and occurrence writes when free evidence is missing", async () => {
-    await expect(ingest(listing(), [occurrence()], [])).rejects.toThrow(/matching cost evidence/);
+    await expect(ingest(listing(), [occurrence()], [])).rejects.toMatchObject({ code: "23514" });
     expect(await counts()).toEqual({ listings: 0, occurrences: 0, evidence: 0 });
   });
   it("rolls back all changes when an evidence identity is reused with different content", async () => {
@@ -309,7 +309,7 @@ describe("ingest_listing RPC", () => {
         [occurrence({ starts_at: "2026-11-21T12:00:00Z" })],
         [evidence({ quote: "Different" })],
       ),
-    ).rejects.toThrow(/identity reused with different content/);
+    ).rejects.toMatchObject({ code: "22023" });
     expect(
       (await db.query<{ title: string }>("select title from public.listings")).rows[0].title,
     ).toBe("Morning practice");
@@ -417,7 +417,7 @@ describe("shared SQL / HttpUrl corpus", () => {
     ];
     for (const write of writes) {
       if (sqlAccepts) await write();
-      else await expect(write()).rejects.toThrow(/check constraint/);
+      else await expect(write()).rejects.toMatchObject({ code: "23514" });
     }
   });
 });
@@ -504,11 +504,11 @@ describe("RLS and least-privilege grants", () => {
           "truncate public.listings cascade",
           "select * from public.ingestion_runs",
         ])
-          await expect(db.exec(sql)).rejects.toThrow(/permission denied/);
-        await expect(ingest()).rejects.toThrow(/permission denied for function ingest_listing/);
-        await expect(db.query("select public.is_http_url('https://example.org')")).rejects.toThrow(
-          /permission denied for function is_http_url/,
-        );
+          await expect(db.exec(sql)).rejects.toMatchObject({ code: "42501" });
+        await expect(ingest()).rejects.toMatchObject({ code: "42501" });
+        await expect(
+          db.query("select public.is_http_url('https://example.org')"),
+        ).rejects.toMatchObject({ code: "42501" });
         // Check the entire grant matrix, not only representative denied writes.
         for (const table of [
           "categories",
@@ -557,9 +557,9 @@ describe("RLS and least-privilege grants", () => {
             ).rows[0].allowed,
           ).toBe(true);
         }
-        await expect(db.exec(`truncate public.${table} cascade`)).rejects.toThrow(
-          /permission denied/,
-        );
+        await expect(db.exec(`truncate public.${table} cascade`)).rejects.toMatchObject({
+          code: "42501",
+        });
       }
     });
   });

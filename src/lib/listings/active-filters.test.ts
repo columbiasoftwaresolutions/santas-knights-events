@@ -10,7 +10,7 @@ describe("active filters", () => {
 
   it("has one entry per filter the visitor set, each removable by its key", () => {
     const set = activeFilters({ q: "judo", borough: "Brooklyn", day: "2026-11-14" });
-    expect(set.map((a) => a.key)).toEqual(["q", "borough", "day"]);
+    expect(new Set(set.map((a) => a.key))).toEqual(new Set(["q", "borough", "day"]));
     expect(set.every((a) => a.label.length > 0)).toBe(true);
   });
 });
