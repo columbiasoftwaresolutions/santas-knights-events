@@ -6,7 +6,11 @@
     "suspicious": "warn",
     "perf": "warn"
   },
-  "env": { "builtin": true, "browser": true, "node": true },
+  "env": {
+    "builtin": true,
+    "browser": true,
+    "node": true
+  },
   "rules": {
     "no-console": "warn",
     "eqeqeq": "error",
@@ -19,7 +23,13 @@
     "react/exhaustive-deps": "error",
     "import/no-duplicates": "error",
     "import/no-unassigned-import": "off",
-    "oxc/no-map-spread": "off"
+    "oxc/no-map-spread": "off",
+    "shadcn/no-arbitrary-values": "error",
+    "shadcn/no-raw-colors": "error",
+    "shadcn/no-restyle": "error",
+    "shadcn/no-inline-styles": "error",
+    "shadcn/no-unknown-classes": "error",
+    "shadcn/require-static-classes": "warn"
   },
   "ignorePatterns": [
     ".next",
@@ -28,5 +38,6 @@
     "next-env.d.ts",
     "supabase/.temp",
     "src/components/ui"
-  ]
+  ],
+  "jsPlugins": ["@shadcn/lint"]
 }
