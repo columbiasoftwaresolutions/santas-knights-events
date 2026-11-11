@@ -1,6 +1,5 @@
-import { clock12 } from "@/lib/dates";
+import { clock12, shortDate } from "@/lib/dates";
 import type { Listing } from "@/lib/listings/schema";
-import { shortDate } from "@/lib/dates";
 import { CostMark } from "./cost-mark";
 
 export function ListingRow({ listing: l }: { listing: Listing }) {

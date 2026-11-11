@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "oxc", "react", "jsx-a11y", "nextjs", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "env": { "builtin": true, "browser": true, "node": true },
+  "rules": {
+    "no-console": "warn",
+    "eqeqeq": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "typescript/consistent-type-imports": "error",
+    "typescript/no-explicit-any": "error",
+    "react/react-in-jsx-scope": "off",
+    "react/jsx-key": "error",
+    "react/exhaustive-deps": "error",
+    "import/no-duplicates": "error",
+    "import/no-unassigned-import": "off",
+    "oxc/no-map-spread": "off"
+  },
+  "ignorePatterns": [
+    ".next",
+    ".vercel",
+    "node_modules",
+    "next-env.d.ts",
+    "supabase/.temp",
+    "src/components/ui"
+  ]
+}

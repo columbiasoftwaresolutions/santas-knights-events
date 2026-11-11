@@ -19,7 +19,7 @@ export class ListingRepo extends Context.Service<
 >()("sk/server/ListingRepo") {
   static readonly sample = Layer.effect(
     ListingRepo,
-    Effect.gen(function* () {
+    Effect.sync(() => {
       const decode = Schema.decodeUnknownEffect(Schema.Array(Listing));
 
       const search = Effect.fn("ListingRepo.search")(function* (filters: Filters) {
