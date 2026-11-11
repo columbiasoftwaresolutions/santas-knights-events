@@ -20,6 +20,7 @@
     "typescript/no-explicit-any": "error",
     "react/react-in-jsx-scope": "off",
     "react/jsx-key": "error",
+    "react/jsx-no-target-blank": "error",
     "react/exhaustive-deps": "error",
     "import/no-duplicates": "error",
     "import/no-unassigned-import": "off",

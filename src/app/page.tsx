@@ -165,7 +165,7 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
                   </Link>
                 </>
               )}
-              <span className="float-right">Sample data</span>
+              <span className="float-right">Sample data: invented listings, no source links</span>
             </p>
 
             {results.length === 0 ? (
