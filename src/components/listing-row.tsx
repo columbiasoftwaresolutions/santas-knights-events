@@ -26,7 +26,7 @@ export function ListingRow({ listing: l }: { listing: Listing }) {
             )}
           </>
         ) : (
-          <span className="text-xl text-muted-foreground">Time TBC</span>
+          <span className="text-xl text-muted-foreground">Time not listed</span>
         )}
       </div>
 
@@ -59,18 +59,15 @@ export function ListingRow({ listing: l }: { listing: Listing }) {
           )}
         </div>
 
-        {links.source || links.register || l.registrationNotes ? (
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+        {links.source || links.register ? (
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm">
             {links.register && (
               <OutboundLink
                 href={links.register.href}
-                className={buttonVariants({ size: "sm" }) + " no-underline"}
+                className={buttonVariants() + " no-underline"}
               >
                 {links.register.label}
               </OutboundLink>
-            )}
-            {l.registrationNotes && (
-              <span className="text-muted-foreground">{l.registrationNotes}</span>
             )}
             {links.source && (
               <OutboundLink href={links.source.href} className="font-semibold text-primary">
@@ -79,6 +76,9 @@ export function ListingRow({ listing: l }: { listing: Listing }) {
             )}
           </div>
         ) : null}
+        {l.registrationNotes && (
+          <p className="mt-2 text-sm text-muted-foreground">{l.registrationNotes}</p>
+        )}
       </div>
     </li>
   );

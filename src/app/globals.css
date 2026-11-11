@@ -65,7 +65,7 @@
   --rule: #cbbda4;
   --input: #a99a7f;
   --ring: #c2331f;
-  --gold: #c2912f;
+  --gold: #9a6f12;
   --green: #2e5e45;
   --radius: 2px;
 }
@@ -115,7 +115,7 @@
    components never use arbitrary values. */
 @utility listing-row-grid {
   display: grid;
-  grid-template-columns: 4.75rem 1fr;
+  grid-template-columns: 4rem 1fr;
   @variant sm {
     grid-template-columns: 6.5rem 1fr;
   }
