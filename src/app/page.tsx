@@ -19,9 +19,12 @@ const load = (filters: Filters) =>
     return yield* repo.search(filters);
   });
 
-function countBy(items: ReadonlyArray<Listing>, pick: (l: Listing) => string) {
+function countBy(items: ReadonlyArray<Listing>, pick: (l: Listing) => string | null) {
   const m = new Map<string, number>();
-  for (const l of items) m.set(pick(l), (m.get(pick(l)) ?? 0) + 1);
+  for (const l of items) {
+    const key = pick(l);
+    if (key) m.set(key, (m.get(key) ?? 0) + 1);
+  }
   return m;
 }
 
@@ -90,7 +93,7 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
     },
   ];
 
-  const byDay = Map.groupBy(results, (l) => l.day);
+  const byDay = Map.groupBy(results, (l) => l.day ?? "unscheduled");
   const active = Object.values(filters).some(Boolean);
 
   return (
@@ -165,7 +168,7 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
             ) : (
               [...byDay.entries()].map(([day, rows]) => (
                 <div key={day} className="mt-6">
-                  <h2 className="font-heading text-lg font-bold border-b-2 border-ink pb-1">{longDay(day)}</h2>
+                  <h2 className="font-heading text-lg font-bold border-b-2 border-ink pb-1">{day === "unscheduled" ? "Schedule not confirmed" : longDay(day)}</h2>
                   <ul>
                     {rows.map((l) => (
                       <ListingRow key={l.id} listing={l} />

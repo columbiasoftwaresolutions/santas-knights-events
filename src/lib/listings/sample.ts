@@ -36,20 +36,33 @@ const ROWS: Row[] = [
   [6, "18:00", "19:00", "Boxing conditioning", "Boxing", "Queens", "Jamaica", "Jamaica rec center, studio B", "Adults", "free", "Free fitness class, drop in.", "Parks feed"],
 ];
 
+// Rows with gaps, as real sources produce them.
+const GAPS = [
+  { id: "sample-101", title: "Community judo night", discipline: "Judo", borough: "Bronx", neighborhood: null, venue: "Parkchester community room", day: 2, startTime: "19:00", endTime: null, ages: null, costStatus: "free" as const,
+    evidence: { quote: "Open to all, no charge.", source: "Center website" } },
+  { id: "sample-102", title: "Youth martial arts at the Beacon", discipline: null, borough: "Bronx", neighborhood: "Mott Haven", venue: "Beacon center", day: null, startTime: null, endTime: null, ages: "Ages 5 to 11", costStatus: "unverified" as const,
+    evidence: null },
+];
+
 export function sampleRows(today: string) {
-  return ROWS.map(
+  const full = ROWS.map(
     ([offset, startTime, endTime, title, discipline, borough, neighborhood, venue, ages, costStatus, quote, source], i) => ({
       id: `sample-${String(i + 1).padStart(3, "0")}`,
       title,
+      category: "class",
       discipline,
       description: "",
       borough,
       neighborhood,
       venue,
+      latitude: null,
+      longitude: null,
       day: addDays(today, offset),
       startTime,
       endTime,
       ages,
+      eligibility: null,
+      registrationUrl: null,
       costStatus,
       evidence: {
         quote,
@@ -59,4 +72,22 @@ export function sampleRows(today: string) {
       },
     }),
   );
+
+  const gaps = GAPS.map((g) => ({
+    ...g,
+    category: "class",
+    description: "",
+    latitude: null,
+    longitude: null,
+    day: g.day === null ? null : addDays(today, g.day),
+    eligibility: null,
+    registrationUrl: null,
+    evidence: g.evidence && {
+      ...g.evidence,
+      url: "https://example.invalid/sample",
+      checkedOn: addDays(today, -2),
+    },
+  }));
+
+  return [...full, ...gaps];
 }
