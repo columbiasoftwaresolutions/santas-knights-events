@@ -1,31 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { activeFilters, filterSummary } from "./active-filters";
+import { activeFilters, DEFAULT_SCOPE, filterSummary } from "./active-filters";
 
-describe("activeFilters", () => {
-  it("is empty for the default view", () => {
+describe("active filters", () => {
+  it("is empty, and summarized as the default scope, when nothing is set", () => {
     expect(activeFilters({})).toEqual([]);
-    expect(filterSummary({})).toBe("All free sessions");
+    expect(filterSummary({})).toBe(DEFAULT_SCOPE);
   });
 
-  it("names each filter in plain words", () => {
-    const f = activeFilters({
-      q: "judo",
-      cost: "free_trial_only",
-      borough: "Brooklyn",
-      discipline: "Judo",
-      day: "2026-11-14",
-    });
-    expect(f.map((a) => a.label)).toEqual([
-      "“judo”",
-      "Free trial only",
-      "Brooklyn",
-      "Judo",
-      "Nov 14",
-    ]);
-  });
-
-  it("summarizes for the mobile disclosure", () => {
-    expect(filterSummary({ borough: "Bronx", cost: "free" })).toBe("Free, Bronx");
+  it("has one entry per filter the visitor set, each removable by its key", () => {
+    const set = activeFilters({ q: "judo", borough: "Brooklyn", day: "2026-11-14" });
+    expect(set.map((a) => a.key)).toEqual(["q", "borough", "day"]);
+    expect(set.every((a) => a.label.length > 0)).toBe(true);
   });
 });

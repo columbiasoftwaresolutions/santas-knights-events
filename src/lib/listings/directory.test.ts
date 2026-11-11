@@ -1,50 +1,74 @@
-import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
 import { buildDirectory, filterListings } from "./directory";
-import { sampleRows } from "./sample";
-import { Listing } from "./schema";
+import { makeListing } from "./test-support";
 
-const all = Schema.decodeUnknownSync(Schema.Array(Listing))(sampleRows("2026-11-11"));
+const trialEvidence = {
+  quote: "First class free.",
+  source: "Studio",
+  supports: "free_trial_only",
+  url: "https://example.org/trial",
+  checkedOn: "2026-11-10",
+};
 
-describe("filterListings", () => {
-  it("matches a neighborhood that is not in the title", () => {
-    const hits = filterListings(all, { q: "harlem", cost: "any" });
-    expect(hits.length).toBeGreaterThan(0);
-    expect(hits.every((l) => l.neighborhood === "Harlem")).toBe(true);
+const all = [
+  makeListing({
+    title: "Open mat judo",
+    borough: "Bronx",
+    neighborhood: "Mott Haven",
+    day: "2026-11-12",
+  }),
+  makeListing({ title: "Tai chi", discipline: "Tai chi", borough: "Brooklyn", day: "2026-11-13" }),
+  makeListing({
+    title: "Kids karate",
+    discipline: "Karate",
+    borough: "Brooklyn",
+    day: "2026-11-13",
+    costStatus: "free_trial_only",
+    evidence: trialEvidence,
+  }),
+  makeListing({ title: "Mystery class", costStatus: "unverified", evidence: null, day: null }),
+];
+
+describe("filtering", () => {
+  it("shows only free sessions unless a cost is chosen", () => {
+    const titles = filterListings(all, {}).map((l) => l.title);
+    expect(titles).not.toContain("Kids karate");
+    expect(titles).not.toContain("Mystery class");
+    expect(filterListings(all, { cost: "free_trial_only" }).map((l) => l.title)).toEqual([
+      "Kids karate",
+    ]);
+  });
+
+  it("searches location as well as title", () => {
+    expect(filterListings(all, { q: "mott haven" }).map((l) => l.title)).toEqual(["Open mat judo"]);
   });
 
   it("applies filters together", () => {
-    const hits = filterListings(all, { borough: "Bronx", cost: "free" });
-    expect(hits.every((l) => l.borough === "Bronx" && l.costStatus === "free")).toBe(true);
+    expect(filterListings(all, { borough: "Brooklyn" }).map((l) => l.title)).toEqual(["Tai chi"]);
+  });
+
+  it("lists unscheduled sessions last", () => {
+    const sorted = filterListings(all, { cost: "any" });
+    expect(sorted.at(-1)?.title).toBe("Mystery class");
   });
 });
 
-describe("buildDirectory", () => {
+describe("counts say what a click would show", () => {
   it("counts every cost status even though results default to free", () => {
-    const d = buildDirectory(all, {});
-    expect(
-      d.results.every((l) => l.costStatus.startsWith("free") && l.costStatus !== "free_trial_only"),
-    ).toBe(true);
-    expect(d.counts.cost.free_trial_only).toBeGreaterThan(0);
-    expect(d.counts.cost.unverified).toBeGreaterThan(0);
+    const { counts } = buildDirectory(all, {});
+    expect(counts.cost.free_trial_only).toBe(1);
+    expect(counts.cost.unverified).toBe(1);
   });
 
-  it("counts a facet without its own filter, so counts say what a click would show", () => {
-    const d = buildDirectory(all, { borough: "Bronx" });
-    // Borough counts ignore the borough filter, so other boroughs still have counts.
-    expect(d.counts.borough.Manhattan).toBeGreaterThan(0);
-    // Discipline counts respect the borough filter.
-    const bronxDisciplines = filterListings(all, { borough: "Bronx" }).map((l) => l.discipline);
-    expect(Object.keys(d.counts.discipline).sort()).toEqual(
-      [...new Set(bronxDisciplines.filter(Boolean))].sort() as string[],
-    );
+  it("ignores a facet's own filter when counting it", () => {
+    const { counts } = buildDirectory(all, { borough: "Bronx" });
+    expect(counts.borough.Brooklyn).toBeGreaterThan(0);
   });
 
   it("keeps every day in the week list when a day is selected", () => {
-    const day = all.find((l) => l.day)!.day!;
-    const d = buildDirectory(all, { day });
-    expect(d.results.every((l) => l.day === day)).toBe(true);
-    expect(new Set(d.forWeek.map((l) => l.day)).size).toBeGreaterThan(1);
+    const { results, forWeek } = buildDirectory(all, { day: "2026-11-12" });
+    expect(results.map((l) => l.day)).toEqual(["2026-11-12"]);
+    expect(new Set(forWeek.map((l) => l.day)).size).toBeGreaterThan(1);
   });
 });

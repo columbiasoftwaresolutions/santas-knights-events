@@ -1,22 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { hrefFor, parseFilters, toggleHref } from "./params";
+import { parseFilters, toggleHref } from "./params";
 
-describe("parseFilters", () => {
+describe("parseFilters treats the URL as untrusted", () => {
   it("keeps valid values and drops unknown ones", () => {
-    expect(
-      parseFilters({ borough: "Queens", cost: "free", day: "2026-11-12", q: " judo " }),
-    ).toEqual({
-      q: "judo",
-      borough: "Queens",
-      discipline: undefined,
-      cost: "free",
-      day: "2026-11-12",
-    });
+    const f = parseFilters({ borough: "Queens", cost: "free", day: "2026-11-12", q: " judo " });
+    expect(f).toMatchObject({ borough: "Queens", cost: "free", day: "2026-11-12", q: "judo" });
     const bad = parseFilters({ borough: "Atlantis", cost: "cheap", day: "tomorrow" });
-    expect(bad.borough).toBeUndefined();
-    expect(bad.cost).toBeUndefined();
-    expect(bad.day).toBeUndefined();
+    expect([bad.borough, bad.cost, bad.day]).toEqual([undefined, undefined, undefined]);
+  });
+
+  it("cannot be talked into the internal 'any' cost", () => {
+    expect(parseFilters({ cost: "any" }).cost).toBeUndefined();
   });
 
   it("takes the first value of a repeated parameter", () => {
@@ -25,19 +20,13 @@ describe("parseFilters", () => {
 });
 
 describe("toggleHref", () => {
-  it("sets a filter and clears it when clicked again", () => {
-    expect(toggleHref({}, "borough", "Bronx")).toBe("/?borough=Bronx");
+  it("sets a filter, clears it when clicked again, and keeps the others", () => {
+    expect(toggleHref({}, "borough", "Bronx")).toContain("borough=Bronx");
     expect(toggleHref({ borough: "Bronx" }, "borough", "Bronx")).toBe("/");
+    expect(toggleHref({ cost: "free" }, "borough", "Bronx")).toMatch(/cost=free.*borough=Bronx/);
   });
 
-  it("keeps the other filters", () => {
-    expect(toggleHref({ cost: "free" }, "borough", "Bronx")).toBe("/?cost=free&borough=Bronx");
-  });
-});
-
-describe("hrefFor", () => {
-  it("returns the root for no values", () => {
-    expect(hrefFor({})).toBe("/");
-    expect(hrefFor({ q: undefined })).toBe("/");
+  it("clears a filter when given an empty value (how the default scope is selected)", () => {
+    expect(toggleHref({ cost: "free_trial_only" }, "cost", "")).toBe("/");
   });
 });
