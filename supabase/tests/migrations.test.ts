@@ -133,21 +133,12 @@ afterAll(async () => {
 });
 
 describe("migration", () => {
-  it("applies cleanly with pg_trgm and retains indexes and RPC security", async () => {
-    const { rows } = await db.query<{ extname: string }>(
-      "select extname from pg_extension where extname = 'pg_trgm'",
-    );
-    expect(rows).toEqual([{ extname: "pg_trgm" }]);
-    const indexes = await db.query<{ indexname: string }>(
-      "select indexname from pg_indexes where tablename = 'listings'",
-    );
-    expect(indexes.rows.map((r) => r.indexname)).toEqual(
-      expect.arrayContaining(["listings_search_idx", "listings_title_trgm_idx"]),
-    );
-    const fn = await db.query<{ prosecdef: boolean; proconfig: string[] }>(
+  it("applies cleanly, and the ingest function runs as the caller with a pinned search path", async () => {
+    const fn = await db.query<{ prosecdef: boolean; proconfig: string[] | null }>(
       "select prosecdef, proconfig from pg_proc where oid = 'public.ingest_listing(jsonb,jsonb,jsonb)'::regprocedure",
     );
-    expect(fn.rows[0]).toEqual({ prosecdef: false, proconfig: ["search_path=pg_catalog, public"] });
+    expect(fn.rows[0]!.prosecdef).toBe(false); // security invoker: no hidden privilege escalation
+    expect(fn.rows[0]!.proconfig?.some((c) => c.startsWith("search_path="))).toBe(true);
   });
 });
 

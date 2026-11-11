@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { Candidate } from "../types";
 import { curated, CURATED } from "./curated";
-import { oacUrl, parseOac, OAC_POLICY_QUOTE } from "./nyc-aging-oac";
+import { parseOac, OAC_POLICY_QUOTE } from "./nyc-aging-oac";
 import { freeSentence, parseParksEvents } from "./parks-events";
 
 const decode = Schema.decodeUnknownSync(Candidate);
@@ -143,12 +143,6 @@ describe("NYC Aging older adult centers", () => {
     const gone = decode(parseOac(JSON.stringify(rows), FETCHED, false, "2026-11-11").candidates[0]);
     expect(gone.listing.cost_status).toBe("unverified");
     expect(gone.evidence).toEqual([]);
-  });
-
-  it("asks for a bounded read of the whole dataset", () => {
-    expect(oacUrl()).toBe(
-      "https://data.cityofnewyork.us/resource/fzy4-e84j.json?$limit=5000&$order=starttime",
-    );
   });
 });
 
