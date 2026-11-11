@@ -110,22 +110,26 @@ export const CURATED: ReadonlyArray<CuratedEntry> = [
     evidence: { quote: "Teens 13-19 train for free every day", url: "https://www.abada.org/" },
   },
   {
-    // The program's own page gives no cost sentence, so this stays unverified.
     listing: {
       dedupe_key: "cops-and-kids:bronx-boxing",
       title: "Youth boxing at the NYC Cops & Kids gym (Bronx)",
       category_slug: "program",
       discipline_slug: "boxing",
       description:
-        "Youth boxing gym in Mount Hope. The program's homepage links to registration and states no cost.",
+        "Free youth boxing program in the Bronx. Check with the gym for its current schedule.",
+      ages_text: "Ages 12 to 21",
       venue: "NYC Cops & Kids Boxing",
-      address: "1761 Walton Ave, Bronx, NY",
+      address: "1761 Walton Ave, Bronx, NY 10451",
       borough: "Bronx",
-      neighborhood: "Mount Hope",
+      neighborhood: null,
       source_url: "https://www.copsandkidsboxing.com/",
-      cost_status: "unverified",
+      cost_status: "free",
     },
-    evidence: null,
+    evidence: {
+      quote:
+        "NYC Cops & Kids currently offers 3 free boxing and fitness locations, as well as a tutoring spaces, in NYC for teens aged 12-21",
+      url: "https://www.copsandkidsboxing.com/home",
+    },
   },
 ];
 
