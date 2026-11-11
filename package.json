@@ -12,7 +12,9 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepare": "simple-git-hooks",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -41,6 +43,20 @@
     "typescript": "^5",
     "vercel": "^65.14.0",
     "vitest": "^5.1.0"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged",
+    "pre-push": "pnpm typecheck && pnpm test"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "oxlint --fix --no-error-on-unmatched-pattern",
+      "oxfmt --no-error-on-unmatched-pattern"
+    ],
+    "*.{js,mjs,cjs,json,jsonc,css}": "oxfmt --no-error-on-unmatched-pattern"
+  },
+  "engines": {
+    "node": ">=22.22.1"
   },
   "packageManager": "pnpm@10.6.5"
 }
