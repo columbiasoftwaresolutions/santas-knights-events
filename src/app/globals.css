@@ -1,0 +1,156 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Theme B, sharpened: warm paper, brick red, gold, green, hard edges.
+   Palette comes from the earlier frontend branch (paper #f7f0e3, red #c2331f). */
+
+@theme inline {
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ink: var(--ink);
+  --color-gold: var(--gold);
+  --color-green: var(--green);
+  --color-rule: var(--rule);
+
+  --radius-sm: 1px;
+  --radius-md: 2px;
+  --radius-lg: var(--radius);
+  --radius-xl: 3px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
+  --radius-4xl: 4px;
+}
+
+:root {
+  --background: #f7f0e3;
+  --foreground: #16120f;
+  --ink: #16120f;
+  --card: #fbf6ec;
+  --card-foreground: #16120f;
+  --popover: #fbf6ec;
+  --popover-foreground: #16120f;
+  --primary: #c2331f;
+  --primary-foreground: #fffaf0;
+  --secondary: #ece2cd;
+  --secondary-foreground: #16120f;
+  --muted: #ece2cd;
+  --muted-foreground: #6c6256;
+  --accent: #f0e2c2;
+  --accent-foreground: #16120f;
+  --destructive: #9e2536;
+  --border: #d6c9b0;
+  --rule: #cbbda4;
+  --input: #a99a7f;
+  --ring: #c2331f;
+  --gold: #c2912f;
+  --green: #2e5e45;
+  --radius: 2px;
+}
+
+.dark {
+  --background: #16120f;
+  --foreground: #f4ecdc;
+  --ink: #f4ecdc;
+  --card: #1f1a16;
+  --card-foreground: #f4ecdc;
+  --popover: #1f1a16;
+  --popover-foreground: #f4ecdc;
+  --primary: #e0472f;
+  --primary-foreground: #16120f;
+  --secondary: #2a231d;
+  --secondary-foreground: #f4ecdc;
+  --muted: #2a231d;
+  --muted-foreground: #a99d8b;
+  --accent: #3a2f20;
+  --accent-foreground: #f4ecdc;
+  --destructive: #e0472f;
+  --border: #3a3128;
+  --rule: #4a3f33;
+  --input: #6b5d4c;
+  --ring: #e0472f;
+  --gold: #d6a544;
+  --green: #5e9b7a;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Condensed, heavy Archivo. The width axis does the work, not a second family. */
+  .display {
+    font-family: var(--font-heading);
+    font-stretch: 78%;
+    font-weight: 800;
+    letter-spacing: -0.005em;
+    line-height: 0.95;
+  }
+
+  /* Cost status as a shape, so it reads without colour or a label.
+     free: solid. registration: open square. trial: hatched. sliding: half. unverified: dashed. */
+  .mark {
+    display: inline-block;
+    width: 0.8125rem;
+    height: 0.8125rem;
+    flex: none;
+    background: var(--green);
+    border: 2px solid var(--green);
+  }
+  .mark[data-status="free_with_registration"] {
+    background: transparent;
+  }
+  .mark[data-status="free_trial_only"] {
+    border-color: var(--gold);
+    background: repeating-linear-gradient(135deg, var(--gold) 0 2px, transparent 2px 4px);
+  }
+  .mark[data-status="sliding_scale"] {
+    border-color: var(--gold);
+    background: linear-gradient(90deg, var(--gold) 50%, transparent 50%);
+  }
+  .mark[data-status="unverified"] {
+    border: 2px dashed var(--muted-foreground);
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
