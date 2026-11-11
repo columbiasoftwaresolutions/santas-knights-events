@@ -17,6 +17,7 @@ export const DISCIPLINES = [
   ["fencing", "Fencing"],
   ["medieval-combat", "Medieval combat"],
   ["wrestling", "Wrestling"],
+  ["capoeira", "Capoeira"],
 ] as const;
 
 export type DisciplineSlug = (typeof DISCIPLINES)[number][0];
@@ -38,6 +39,7 @@ const RULES: ReadonlyArray<readonly [DisciplineSlug, RegExp]> = [
   ["fencing", /\bfencing\b/i],
   ["medieval-combat", /\b(medieval combat|gladiator|armored (combat|practice)|hema|longsword)\b/i],
   ["wrestling", /\bwrestling\b/i],
+  ["capoeira", /\bcapoeira\b/i],
   ["self-defense", /\b(self[- ]?defen[cs]e|krav maga)\b/i],
 ];
 
