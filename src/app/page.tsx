@@ -72,7 +72,8 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
       load(without("day")),
       load(without("borough")),
       load(without("discipline")),
-      load(without("cost")),
+      // Counts for every cost status, so Cost shows what a click would add.
+      load({ ...filters, cost: "any" }),
     ]),
   );
 
@@ -189,7 +190,7 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
                   </h2>
                   <ul>
                     {rows.map((l) => (
-                      <ListingRow key={l.id} listing={l} />
+                      <ListingRow key={l.sessionId} listing={l} />
                     ))}
                   </ul>
                 </div>

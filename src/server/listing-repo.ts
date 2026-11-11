@@ -2,7 +2,7 @@ import { Context, Effect, Layer, Schema } from "effect";
 
 import { nyToday } from "@/lib/dates";
 import { sampleRows } from "@/lib/listings/sample";
-import { Listing, type Filters } from "@/lib/listings/schema";
+import { isFreeStatus, Listing, type Filters } from "@/lib/listings/schema";
 
 // Everything the pages know about data goes through this service. The sample
 // layer below is swapped for a Supabase layer without touching any page.
@@ -31,7 +31,13 @@ export class ListingRepo extends Context.Service<
           all
             .filter((l) => !filters.borough || l.borough === filters.borough)
             .filter((l) => !filters.discipline || l.discipline === filters.discipline)
-            .filter((l) => !filters.cost || l.costStatus === filters.cost)
+            .filter((l) =>
+              filters.cost === "any"
+                ? true
+                : filters.cost
+                  ? l.costStatus === filters.cost
+                  : isFreeStatus(l.costStatus),
+            )
             .filter((l) => !filters.day || l.day === filters.day)
             .filter(
               (l) =>

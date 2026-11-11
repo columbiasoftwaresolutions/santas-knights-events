@@ -41,7 +41,7 @@ export function WeekStrip({
               aria-label={`${sessions.length} sessions`}
             >
               {sessions.map((s) => (
-                <span key={s.id} className="mark mark-sm" data-status={s.costStatus} />
+                <span key={s.sessionId} className="mark mark-sm" data-status={s.costStatus} />
               ))}
             </span>
           </Link>
