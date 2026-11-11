@@ -3,37 +3,24 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { EmptyState } from "@/components/empty-state";
 import { FilterColumn, type Facet } from "@/components/filter-column";
 import { ListingRow } from "@/components/listing-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { WeekStrip } from "@/components/week-strip";
 import { longDay } from "@/lib/dates";
-import { hrefFor, parseFilters } from "@/lib/listings/params";
-import {
-  BOROUGHS,
-  COST_LABEL,
-  COST_STATUSES,
-  type Filters,
-  type Listing,
-} from "@/lib/listings/schema";
+import { activeFilters, DEFAULT_SCOPE, filterSummary } from "@/lib/listings/active-filters";
+import { parseFilters } from "@/lib/listings/params";
+import { BOROUGHS, COST_LABEL, COST_STATUSES, type Filters } from "@/lib/listings/schema";
 import { ListingRepo } from "@/server/listing-repo";
 import { runServer } from "@/server/run";
 
 const load = (filters: Filters) =>
   Effect.gen(function* () {
     const repo = yield* ListingRepo;
-    return yield* repo.search(filters);
+    return yield* repo.directory(filters);
   });
-
-function countBy(items: ReadonlyArray<Listing>, pick: (l: Listing) => string | null) {
-  const m = new Map<string, number>();
-  for (const l of items) {
-    const key = pick(l);
-    if (key) m.set(key, (m.get(key) ?? 0) + 1);
-  }
-  return m;
-}
 
 const Title = () => (
   <h1 className="display text-5xl sm:text-6xl">
@@ -63,50 +50,39 @@ export default function Home(props: PageProps<"/">) {
 async function Directory({ searchParams }: { searchParams: PageProps<"/">["searchParams"] }) {
   await connection();
   const filters = parseFilters(await searchParams);
+  const { results, forWeek, counts } = await runServer(load(filters));
 
-  // Each facet is counted with every filter except its own, so counts show what a click would give.
-  const without = (k: keyof Filters): Filters => ({ ...filters, [k]: undefined });
-  const [results, forWeek, forBorough, forDiscipline, forCost] = await runServer(
-    Effect.all([
-      load(filters),
-      load(without("day")),
-      load(without("borough")),
-      load(without("discipline")),
-      // Counts for every cost status, so Cost shows what a click would add.
-      load({ ...filters, cost: "any" }),
-    ]),
-  );
-
-  const boroughCount = countBy(forBorough, (l) => l.borough);
-  const disciplineCount = countBy(forDiscipline, (l) => l.discipline);
-  const costCount = countBy(forCost, (l) => l.costStatus);
-
+  const freeCount = (counts.cost.free ?? 0) + (counts.cost.free_with_registration ?? 0);
   const facets: Facet[] = [
     {
       key: "cost",
       title: "Cost",
-      options: COST_STATUSES.map((s) => ({
-        value: s,
-        label: COST_LABEL[s],
-        count: costCount.get(s) ?? 0,
-      })),
+      options: [
+        { value: "", label: DEFAULT_SCOPE, count: freeCount },
+        ...COST_STATUSES.map((s) => ({
+          value: s,
+          label: COST_LABEL[s],
+          count: counts.cost[s] ?? 0,
+          status: s,
+        })),
+      ],
     },
     {
       key: "borough",
       title: "Borough",
-      options: BOROUGHS.map((b) => ({ value: b, label: b, count: boroughCount.get(b) ?? 0 })),
+      options: BOROUGHS.map((b) => ({ value: b, label: b, count: counts.borough[b] ?? 0 })),
     },
     {
       key: "discipline",
       title: "Discipline",
-      options: [...disciplineCount.entries()]
+      options: Object.entries(counts.discipline)
         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
         .map(([d, n]) => ({ value: d, label: d, count: n })),
     },
   ];
 
   const byDay = Map.groupBy(results, (l) => l.day ?? "unscheduled");
-  const active = Object.values(filters).some(Boolean);
+  const hasFilters = activeFilters(filters).length > 0;
 
   return (
     <>
@@ -136,25 +112,29 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
         <div className="mt-8 grid directory-grid gap-10">
           <aside>
             <details className="group md:hidden">
-              <summary className="cursor-pointer border-y-2 border-ink py-2 font-heading text-base font-bold marker:content-none">
-                Filters
-                <span className="float-right text-sm font-semibold text-muted-foreground group-open:hidden">
-                  {active ? "On" : "Off"}
+              <summary className="flex cursor-pointer items-baseline justify-between gap-3 border-y-2 border-ink py-2 marker:content-none">
+                <span className="font-heading text-base font-bold">Filters</span>
+                <span className="min-w-0 truncate text-sm text-muted-foreground group-open:hidden">
+                  {filterSummary(filters)}
+                </span>
+                <span className="ml-auto text-sm font-semibold" aria-hidden="true">
+                  <span className="group-open:hidden">Show</span>
+                  <span className="hidden group-open:inline">Hide</span>
                 </span>
               </summary>
               <div className="pt-5">
-                <FilterColumn facets={facets} filters={filters} />
+                <FilterColumn facets={facets} filters={filters} idPrefix="m" />
               </div>
             </details>
             <div className="hidden md:block">
-              <FilterColumn facets={facets} filters={filters} />
+              <FilterColumn facets={facets} filters={filters} idPrefix="d" />
             </div>
           </aside>
 
           <section aria-label="Results">
             <p className="text-sm text-muted-foreground">
               {results.length} {results.length === 1 ? "session" : "sessions"}
-              {active && (
+              {hasFilters && (
                 <>
                   {" "}
                   <Link
@@ -165,23 +145,13 @@ async function Directory({ searchParams }: { searchParams: PageProps<"/">["searc
                   </Link>
                 </>
               )}
-              <span className="float-right">Sample data: invented listings, no source links</span>
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Sample data: invented listings, no source links.
             </p>
 
             {results.length === 0 ? (
-              <div className="mt-6 border-t-2 border-ink py-8">
-                <p className="font-heading text-xl font-bold">Nothing matches that combination.</p>
-                <p className="mt-1 text-muted-foreground">
-                  Remove a filter, or{" "}
-                  <Link
-                    href={hrefFor({})}
-                    className="font-semibold text-primary underline underline-offset-4"
-                  >
-                    see the whole week
-                  </Link>
-                  .
-                </p>
-              </div>
+              <EmptyState filters={filters} />
             ) : (
               [...byDay.entries()].map(([day, rows]) => (
                 <div key={day} className="mt-6">
