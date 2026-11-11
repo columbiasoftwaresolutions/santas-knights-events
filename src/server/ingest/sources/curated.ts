@@ -121,7 +121,7 @@ export const CURATED: ReadonlyArray<CuratedEntry> = [
       venue: "NYC Cops & Kids Boxing",
       address: "1761 Walton Ave, Bronx, NY 10451",
       borough: "Bronx",
-      neighborhood: null,
+      neighborhood: "Mount Hope",
       source_url: "https://www.copsandkidsboxing.com/",
       cost_status: "free",
     },
